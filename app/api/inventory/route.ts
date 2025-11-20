@@ -1,81 +1,58 @@
 // app/api/inventory/route.ts
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+
+// This API route now proxies to an external backend when `BACKEND_URL` is configured.
+// If you removed Prisma (as in this repo), set `BACKEND_URL` in Vercel (or your env)
+// to point to your existing inventory backend (e.g. https://api.example.com).
+
+const BACKEND_URL = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_BASE || '';
+
+function backendNotConfiguredResponse() {
+  return NextResponse.json(
+    { error: 'Backend not configured. Set BACKEND_URL to your inventory backend.' },
+    { status: 501 }
+  );
+}
 
 export async function GET(request: Request) {
+  if (!BACKEND_URL) return backendNotConfiguredResponse();
+
   try {
-    const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
-    const search = searchParams.get('search') || '';
+    // Proxy GET query params to external backend
+    const incomingUrl = new URL(request.url);
+    const targetUrl = new URL(`${BACKEND_URL.replace(/\/$/, '')}/inventory`);
+    targetUrl.search = incomingUrl.search;
 
-    const where = search
-      ? {
-          OR: [
-            { name: { contains: search, mode: 'insensitive' as any } },
-            { sku: { contains: search, mode: 'insensitive' as any } },
-          ],
-        }
-      : {};
-
-    const [products, total] = await Promise.all([
-      prisma.product.findMany({
-        where,
-        include: {
-          supplier: true,
-          warehouse: true,
-        },
-        skip: (page - 1) * limit,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-      }),
-      prisma.product.count({ where }),
-    ]);
-
-    return NextResponse.json({
-      products,
-      pagination: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
+    const res = await fetch(targetUrl.toString(), {
+      method: 'GET',
+      headers: { accept: 'application/json' },
     });
+
+    const body = await res.text();
+    return new NextResponse(body, { status: res.status, headers: { 'content-type': res.headers.get('content-type') || 'application/json' } });
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to fetch products' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to proxy request to backend' }, { status: 502 });
   }
 }
 
 export async function POST(request: Request) {
+  if (!BACKEND_URL) return backendNotConfiguredResponse();
+
   try {
-    const data = await request.json();
-    
-    const product = await prisma.product.create({
-      data: {
-        ...data,
-        price: parseFloat(data.price),
-        costPrice: parseFloat(data.costPrice),
-      },
+    const incomingUrl = new URL(request.url);
+    const targetUrl = `${BACKEND_URL.replace(/\/$/, '')}/inventory`;
+
+    // Forward body and headers
+    const body = await request.text();
+    const res = await fetch(targetUrl, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body,
     });
 
-    // Create stock movement record
-    await prisma.stockMovement.create({
-      data: {
-        productId: product.id,
-        type: 'IN',
-        quantity: data.quantity,
-        reason: 'Initial stock',
-      },
-    });
-
-    return NextResponse.json(product, { status: 201 });
+    const respText = await res.text();
+    return new NextResponse(respText, { status: res.status, headers: { 'content-type': res.headers.get('content-type') || 'application/json' } });
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to create product' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to proxy POST to backend' }, { status: 502 });
   }
 }

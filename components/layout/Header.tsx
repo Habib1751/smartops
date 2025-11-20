@@ -45,8 +45,8 @@ export function Header({ unreadCount = 5, onToggleSidebar }: HeaderProps) {
             <User size={16} />
           </div>
           <div className="text-sm hidden sm:block">
-            <p className="font-medium text-gray-900">Habib Ullah</p>
-            <p className="text-gray-500 text-xs">habib@kodexlabs.com</p>
+            <p className="font-medium text-gray-900">Adiel</p>
+            <p className="text-gray-500 text-xs">user@gmail.com</p>
           </div>
         </div>
       </div>

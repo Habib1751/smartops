@@ -451,4 +451,75 @@ export const mockStats = {
   monthlyRevenue: 156000,
   availableTechs: 3,
   availableEquipment: 25,
+  // Backwards-compatible stat names used in dashboard components
+  totalProducts: 24,
+  pendingOrders: 6,
+  totalCustomers: 38,
 };
+
+// Backwards-compatible aliases and small helper mocks used by older components
+// Some components expect different export names (mockCustomers, mockOrders, mockConversations, documents).
+// Provide lightweight derived exports so imports remain stable for the UI.
+export const mockCustomers = mockClients.map((c) => ({
+  id: c.client_id,
+  name: c.name,
+  phone: c.phone,
+  email: c.email,
+  totalOrders: c.total_events_count,
+  lastOrder: c.last_event_date,
+}));
+
+export const mockOrders = mockEvents.map((e) => ({
+  id: e.event_id,
+  orderNumber: e.event_code,
+  customer: { name: (mockClients.find((c) => c.client_id === e.client_id) || { name: 'Unknown' }).name },
+  status: e.event_status,
+  totalAmount: e.total_price,
+  createdAt: e.created_at || new Date().toISOString(),
+}));
+
+// Basic mockProducts used by inventory/dashboard components
+export const mockProducts = [
+  { id: 'prod-001', name: 'Speaker Model A', sku: 'SPK-A-001', quantity: 4, minStock: 2, category: 'Sound', warehouse: { id: 'wh-1', name: 'Main Warehouse' } },
+  { id: 'prod-002', name: 'Mixer 16ch', sku: 'MIX-16-002', quantity: 1, minStock: 1, category: 'Sound', warehouse: { id: 'wh-1', name: 'Main Warehouse' } },
+  { id: 'prod-003', name: 'Cable Pack', sku: 'CABL-PK-003', quantity: 50, minStock: 20, category: 'Accessories', warehouse: { id: 'wh-2', name: 'Secondary Warehouse' } },
+  { id: 'prod-004', name: 'LED Panel', sku: 'LED-001', quantity: 6, minStock: 2, category: 'Screens', warehouse: { id: 'wh-1', name: 'Main Warehouse' } },
+];
+
+export const mockConversations = mockClients.map((c) => {
+  const msgs = mockMessages.filter((m) => m.client_id === c.client_id).map((m) => ({
+    id: m.message_id,
+    text: m.content,
+    time: m.created_at,
+    sent: m.direction === 'outbound',
+  }));
+
+  const last = msgs[msgs.length - 1];
+
+  return {
+    id: c.client_id,
+    name: c.name,
+    phone: c.phone,
+    lastMessage: last ? last.text : 'No messages yet',
+    lastMessageTime: last ? last.time : null,
+    unreadCount: msgs.filter((x) => !x.sent).length,
+    messages: msgs,
+  };
+});
+
+export const documents = [
+  {
+    id: 'doc-001',
+    document_name: 'Invoice EVT-2025-000001',
+    event_id: 'evt-001',
+    document_type: 'invoice',
+    file_url: '/docs/invoice-evt-001.pdf',
+  },
+  {
+    id: 'doc-002',
+    document_name: 'Technical Rider EVT-2025-000002',
+    event_id: 'evt-002',
+    document_type: 'rider',
+    file_url: '/docs/rider-evt-002.pdf',
+  },
+];
