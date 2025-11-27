@@ -5,7 +5,7 @@ import admin from 'firebase-admin';
 // - FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY (private key with \n escaped).
 
 function parseServiceAccountFromEnv(): admin.ServiceAccount | null {
-  const raw = process.env.local FIREBASE_SERVICE_ACCOUNT_JSON;
+  const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
   if (raw) {
     try {
       const parsed = JSON.parse(raw);
