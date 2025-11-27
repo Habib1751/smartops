@@ -82,7 +82,7 @@ export default function DashboardPage() {
                 <h3 className="text-2xl sm:text-3xl font-bold text-gray-900">{stat.value}</h3>
               </div>
               <div className={`${stat.bgColor} p-3 sm:p-4 rounded-lg`}>
-                {React.cloneElement(stat.icon as React.ReactElement, { size: 20, className: `sm:w-6 sm:h-6 ${(stat.icon as any).props.className}` })}
+                {stat.icon}
               </div>
             </div>
           </div>
