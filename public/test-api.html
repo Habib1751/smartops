@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test - Leads</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #059669;
+        }
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .success {
+            background: #d1fae5;
+            border: 1px solid #10b981;
+            color: #065f46;
+        }
+        .error {
+            background: #fee2e2;
+            border: 1px solid #ef4444;
+            color: #991b1b;
+        }
+        .info {
+            background: #dbeafe;
+            border: 1px solid #3b82f6;
+            color: #1e40af;
+            margin-bottom: 20px;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #10b981;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Leads API Direct Test</h1>
+        
+        <div class="info">
+            <strong>API Endpoint:</strong><br>
+            https://smartops-dev-cjc6cadne5gwfja3.israelcentral-01.azurewebsites.net/api/leads
+        </div>
+
+        <button onclick="testAPI()" id="testBtn">
+            <span id="btnText">Test API Connection</span>
+            <span id="btnLoading" class="loading" style="display:none;"></span>
+        </button>
+        
+        <button onclick="location.reload()">Clear Results</button>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        async function testAPI() {
+            const resultDiv = document.getElementById('result');
+            const testBtn = document.getElementById('testBtn');
+            const btnText = document.getElementById('btnText');
+            const btnLoading = document.getElementById('btnLoading');
+            
+            // Show loading state
+            testBtn.disabled = true;
+            btnText.style.display = 'none';
+            btnLoading.style.display = 'inline-block';
+            resultDiv.innerHTML = '';
+
+            const apiUrl = 'https://smartops-dev-cjc6cadne5gwfja3.israelcentral-01.azurewebsites.net/api/leads';
+            
+            console.log('🧪 Testing API:', apiUrl);
+            
+            try {
+                const startTime = Date.now();
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const duration = Date.now() - startTime;
+                const data = await response.json();
+                
+                console.log('✅ API Response:', data);
+                
+                const leadsCount = data.data ? data.data.length : 0;
+                
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = `
+                    <strong>✅ Success!</strong><br><br>
+                    <strong>Status:</strong> ${response.status} ${response.statusText}<br>
+                    <strong>Response Time:</strong> ${duration}ms<br>
+                    <strong>Leads Found:</strong> ${leadsCount}<br>
+                    <strong>Total Returned:</strong> ${data.meta?.returned || 'N/A'}<br><br>
+                    <strong>Response Data:</strong>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                    ${leadsCount === 0 ? '<br><strong style="color: #d97706;">⚠️ API returned 0 leads. Database might be empty.</strong>' : ''}
+                `;
+                
+            } catch (error) {
+                console.error('❌ API Error:', error);
+                
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    <strong>❌ Error!</strong><br><br>
+                    <strong>Message:</strong> ${error.message}<br><br>
+                    <strong>Possible Causes:</strong><br>
+                    1. <strong>CORS Error</strong> - The API needs to allow requests from this origin<br>
+                    2. <strong>Network Error</strong> - Can't reach the API server<br>
+                    3. <strong>API Down</strong> - The external API might be offline<br><br>
+                    <strong>Full Error:</strong>
+                    <pre>${error.stack || error.toString()}</pre>
+                    <br>
+                    <strong>Check Browser Console (F12) for more details</strong>
+                `;
+            } finally {
+                // Reset button state
+                testBtn.disabled = false;
+                btnText.style.display = 'inline';
+                btnLoading.style.display = 'none';
+            }
+        }
+
+        // Auto-run test on page load
+        window.addEventListener('load', () => {
+            console.log('🚀 Page loaded, auto-running API test...');
+            setTimeout(testAPI, 500);
+        });
+    </script>
+</body>
+</html>

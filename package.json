@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:clean": "powershell -ExecutionPolicy Bypass -File ./scripts/start-dev-clean.ps1",
+    "dev:fixlock": "powershell -ExecutionPolicy Bypass -File ./scripts/clean-dev-lock.ps1 -Restart",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
@@ -15,6 +17,8 @@
     "next": "16.0.1",
     "next-auth": "^4.24.13",
     "next-query": "^1.9.0",
+    "firebase": "^10.11.0",
+    "firebase-admin": "^11.0.0",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-hook-form": "^7.66.0",

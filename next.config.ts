@@ -1,20 +1,8 @@
-// tailwind.config.ts
-import type { Config } from 'tailwindcss';
+import type { NextConfig } from 'next';
 
-const config: Config = {
-  content: [
-    './pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './components/**/*.{js,ts,jsx,tsx,mdx}',
-    './app/**/*.{js,ts,jsx,tsx,mdx}',
-  ],
-  theme: {
-    extend: {
-      colors: {
-        'whatsapp-green': '#25D366',
-        'chat-bg': '#ECE5DD',
-      },
-    },
-  },
-  plugins: [],
+const nextConfig: NextConfig = {
+  reactStrictMode: true,
+  // Add other Next.js config options here if needed
 };
-export default config;
+
+export default nextConfig;
