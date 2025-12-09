@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { mockStats } from '@/data/mockData';
 import { Briefcase, CheckCircle, Users, Zap, Package, DollarSign, TrendingUp } from 'lucide-react';
 import QuickActions from '@/components/dashboard/QuickActions';
 import { fetchLeads } from '@/lib/api';
@@ -28,37 +27,37 @@ export default function DashboardPage() {
   const statCards = [
     {
       title: 'Total Events',
-      value: mockStats.totalEvents,
+      value: 0,
       icon: <CheckCircle className="text-green-600" size={24} />,
       bgColor: 'bg-green-50',
     },
     {
       title: 'Pending Leads',
-      value: mockStats.pendingLeads,
+      value: leads.length,
       icon: <Briefcase className="text-blue-600" size={24} />,
       bgColor: 'bg-blue-50',
     },
     {
       title: 'Confirmed Events',
-      value: mockStats.confirmedEvents,
+      value: 0,
       icon: <TrendingUp className="text-purple-600" size={24} />,
       bgColor: 'bg-purple-50',
     },
     {
       title: 'Available Technicians',
-      value: mockStats.availableTechs,
+      value: 0,
       icon: <Users className="text-orange-600" size={24} />,
       bgColor: 'bg-orange-50',
     },
     {
       title: 'Available Equipment',
-      value: mockStats.availableEquipment,
+      value: 0,
       icon: <Package className="text-indigo-600" size={24} />,
       bgColor: 'bg-indigo-50',
     },
     {
       title: 'Monthly Revenue',
-      value: `$${(mockStats.monthlyRevenue / 1000).toFixed(0)}K`,
+      value: '$0K',
       icon: <DollarSign className="text-green-600" size={24} />,
       bgColor: 'bg-green-50',
     },
@@ -101,8 +100,8 @@ export default function DashboardPage() {
           </div>
         ) : leads.length > 0 ? (
           <div className="space-y-2 sm:space-y-3">
-            {leads.slice(0, 3).map((lead) => (
-              <div key={lead.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg gap-2">
+            {leads.slice(0, 3).map((lead, index) => (
+              <div key={lead.id || lead.lead_id || index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg gap-2">
                 <div className="min-w-0 flex-1">
                   <p className="font-medium text-gray-900 text-sm sm:text-base truncate">{lead.name || lead.event_location}</p>
                   <p className="text-xs sm:text-sm text-gray-600 truncate">

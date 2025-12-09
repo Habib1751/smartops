@@ -46,8 +46,7 @@ export function initializeFirebaseAdminIfNeeded() {
   });
 }
 
-// Do not initialize at import time; callers should call initializeFirebaseAdminIfNeeded()
-// when they are running on the server and expect admin to be available.
+
 
 export function getAdminAuth() {
   if (!admin.apps.length) {

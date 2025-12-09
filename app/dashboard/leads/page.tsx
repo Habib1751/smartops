@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { Search, Filter, Plus, Phone, Mail, Calendar, DollarSign, User, Building2, MapPin, TrendingUp, MessageSquare } from 'lucide-react';
-import { fetchLeads } from '@/lib/api';
+import { fetchLeads, createLead } from '@/lib/api';
+import toast from 'react-hot-toast';
+import LeadModal from '@/components/leads/LeadModal';
 
 type Lead = {
   // Core identification
@@ -64,6 +66,7 @@ export default function LeadsPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Initial load
   useEffect(() => {
@@ -113,6 +116,18 @@ export default function LeadsPage() {
     } finally {
       setLoading(false);
       console.log('🏁 loadLeads END');
+    }
+  };
+
+  const handleCreateLead = async (leadData: any) => {
+    try {
+      await createLead(leadData);
+      toast.success('Lead created successfully');
+      setIsModalOpen(false);
+      loadLeads(); // Reload leads
+    } catch (error: any) {
+      console.error('❌ Error creating lead:', error);
+      toast.error('Failed to create lead: ' + error.message);
     }
   };
 
@@ -223,7 +238,7 @@ export default function LeadsPage() {
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Leads Management</h1>
           <p className="text-gray-600 mt-1 text-sm sm:text-base">Manage and track your sales leads</p>
         </div>
-        <button className="flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors w-full sm:w-auto">
+        <button className="flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors w-full sm:w-auto" onClick={() => setIsModalOpen(true)}>
           <Plus className="w-4 h-4" />
           New Lead
         </button>
@@ -381,7 +396,12 @@ export default function LeadsPage() {
         )}
       </div>
 
-
+      {/* Lead Modal */}
+      <LeadModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleCreateLead}
+      />
     </div>
   );
 }

@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Phone, MessageSquare, Calendar, User, Clock } from 'lucide-react';
+import { ArrowLeft, Phone, MessageSquare, Calendar, User, Clock, Send } from 'lucide-react';
+import { createMessage } from '@/lib/api';
+import toast from 'react-hot-toast';
+import MessageModal from '@/components/messages/MessageModal';
 
 interface Message {
   message_id: string;
@@ -43,6 +46,7 @@ export default function MessagesPage() {
   const [lead, setLead] = useState<Lead | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
 
   useEffect(() => {
     if (leadId) {
@@ -95,6 +99,18 @@ export default function MessagesPage() {
       console.error('❌ Error fetching lead:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSendMessage = async (messageData: any) => {
+    try {
+      await createMessage(messageData);
+      toast.success('Message sent successfully');
+      setIsMessageModalOpen(false);
+      fetchMessages(); // Reload messages
+    } catch (error: any) {
+      console.error('❌ Error sending message:', error);
+      toast.error('Failed to send message: ' + error.message);
     }
   };
 
@@ -222,6 +238,13 @@ export default function MessagesPage() {
                 <MessageSquare className="w-4 h-4" />
                 <span>{messages.length} messages</span>
               </div>
+              <button
+                onClick={() => setIsMessageModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                <Send className="w-4 h-4" />
+                Send Message
+              </button>
             </div>
           )}
         </div>
@@ -302,6 +325,17 @@ export default function MessagesPage() {
           )}
         </div>
       </div>
+
+      {/* Message Modal */}
+      {lead && (
+        <MessageModal
+          isOpen={isMessageModalOpen}
+          onClose={() => setIsMessageModalOpen(false)}
+          onSubmit={handleSendMessage}
+          leadId={leadId}
+          leadPhone={lead.phone}
+        />
+      )}
     </div>
   );
 }

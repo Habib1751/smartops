@@ -77,10 +77,8 @@ export async function fetchLeads(params?: { search?: string; status?: string; pr
   const response = await fetchApi(endpoint);
   console.log('📥 fetchLeads raw response:', response);
   
-  // Handle both direct array and wrapped response formats
   const result = response?.data || response || [];
   console.log('✅ fetchLeads returning:', Array.isArray(result) ? `${result.length} items` : result);
-  
   return result;
 }
 
@@ -96,8 +94,79 @@ export async function fetchMessages(leadId?: string) {
 
 /**
  * Fetch inventory from the API
+ * @param params - Query parameters for pagination and search
  */
-export async function fetchInventory() {
-  const response = await fetchApi('/api/inventory');
+export async function fetchInventory(params?: { limit?: number; offset?: number; q?: string }) {
+  let endpoint = '/api/inventory';
+  
+  if (params) {
+    const queryParams = new URLSearchParams();
+    if (params.limit) queryParams.append('limit', params.limit.toString());
+    if (params.offset) queryParams.append('offset', params.offset.toString());
+    if (params.q) queryParams.append('q', params.q);
+    
+    const queryString = queryParams.toString();
+    if (queryString) {
+      endpoint += `?${queryString}`;
+    }
+  }
+  
+  const response = await fetchApi(endpoint);
   return response?.data || response || [];
 }
+
+/**
+ * Create a new lead
+ * @param leadData - Lead data to create
+ */
+export async function createLead(leadData: any) {
+  return await fetchApi('/api/leads', {
+    method: 'POST',
+    body: JSON.stringify(leadData),
+  });
+}
+
+/**
+ * Create a new message
+ * @param messageData - Message data to create
+ */
+export async function createMessage(messageData: any) {
+  return await fetchApi('/api/messages', {
+    method: 'POST',
+    body: JSON.stringify(messageData),
+  });
+}
+
+/**
+ * Create a new inventory item
+ * @param inventoryData - Inventory data to create
+ */
+export async function createInventory(inventoryData: any) {
+  return await fetchApi('/api/inventory', {
+    method: 'POST',
+    body: JSON.stringify(inventoryData),
+  });
+}
+
+/**
+ * Update an existing inventory item
+ * @param equipmentId - ID of the equipment to update
+ * @param updateData - Data to update
+ */
+export async function updateInventory(equipmentId: string, updateData: any) {
+  return await fetchApi(`/api/inventory?equipment_id=${equipmentId}`, {
+    method: 'PUT',
+    body: JSON.stringify(updateData),
+  });
+}
+
+/**
+ * Delete an inventory item
+ * @param equipmentId - ID of the equipment to delete
+ */
+export async function deleteInventory(equipmentId: string) {
+  return await fetchApi(`/api/inventory?equipment_id=${equipmentId}`, {
+    method: 'DELETE',
+  });
+}
+

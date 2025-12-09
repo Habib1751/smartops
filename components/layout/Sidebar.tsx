@@ -15,6 +15,7 @@ import {
   Truck,
   FileText,
   X,
+  FolderOpen,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -32,6 +33,7 @@ export function Sidebar({ unreadCount = 5, mobileOpen = false, onClose }: Sideba
     { name: 'Events', href: '/dashboard/events', icon: ShoppingCart },
     { name: 'Clients', href: '/dashboard/clients', icon: Users },
     { name: 'Equipment', href: '/dashboard/equipment', icon: Package },
+    { name: 'Inventory Categories', href: '/dashboard/inventory-categories', icon: FolderOpen },
     { name: 'Technicians', href: '/dashboard/technicians', icon: Zap },
     { name: 'Vehicles', href: '/dashboard/vehicles', icon: Truck },
     { name: 'Quotes', href: '/dashboard/quotes', icon: FileText },

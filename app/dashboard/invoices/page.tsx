@@ -1,34 +1,24 @@
 'use client';
 
 import React from 'react';
-import { documents } from '@/data/mockData';
+import { AlertCircle } from 'lucide-react';
 
 export default function InvoicesPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Invoices & Documents</h1>
 
-      <div className="bg-white rounded-lg shadow p-6">
-        <table className="w-full text-left">
-          <thead>
-            <tr className="text-sm text-gray-600 border-b">
-              <th className="py-2">Document</th>
-              <th className="py-2">Event ID</th>
-              <th className="py-2">Type</th>
-              <th className="py-2">File</th>
-            </tr>
-          </thead>
-          <tbody>
-            {documents.map(d => (
-              <tr key={d.id} className="border-b hover:bg-gray-50">
-                <td className="py-3 text-sm">{d.document_name}</td>
-                <td className="py-3 text-sm">{d.event_id}</td>
-                <td className="py-3 text-sm">{d.document_type}</td>
-                <td className="py-3 text-sm"><a className="text-blue-600" href={d.file_url}>View</a></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* Empty State */}
+      <div className="bg-white rounded-lg shadow p-12">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+            <AlertCircle size={32} className="text-blue-600" />
+          </div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">Invoices Section</h3>
+          <p className="text-gray-600 max-w-md mx-auto">
+            Invoice and document management functionality will be available here. API integration pending.
+          </p>
+        </div>
       </div>
     </div>
   );
