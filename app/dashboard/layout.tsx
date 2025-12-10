@@ -41,7 +41,7 @@ export default function DashboardLayout({
 
   // User is authenticated - show the full dashboard with sidebar and header
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
+    <div className="flex h-screen bg-gray-50 overflow-hidden text-gray-900">
       <Sidebar {...({ unreadCount: 5, mobileOpen: sidebarOpen, onClose: () => setSidebarOpen(false) } as any)} />
       <div className="flex-1 flex flex-col ml-0 md:ml-64 min-w-0">
         <Header unreadCount={5} onToggleSidebar={() => setSidebarOpen((s) => !s)} />
