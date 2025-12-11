@@ -52,6 +52,8 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
+    console.log('POST /api/inventory_categories - Request body:', body);
+    
     const response = await fetch(`${EXTERNAL_API_BASE}/api/inventory_categories`, {
       method: 'POST',
       headers: {
@@ -62,6 +64,8 @@ export async function POST(request: NextRequest) {
     
     const data = await response.json();
     
+    console.log('POST /api/inventory_categories - Response:', response.status, data);
+    
     if (!response.ok) {
       return NextResponse.json(data, { status: response.status });
     }
@@ -71,7 +75,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('POST /api/inventory_categories error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
@@ -181,6 +185,8 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const categoryId = searchParams.get('category_id');
     
+    console.log('DELETE /api/inventory_categories - category_id:', categoryId);
+    
     if (!categoryId) {
       return NextResponse.json(
         { error: 'category_id is required' },
@@ -197,6 +203,8 @@ export async function DELETE(request: NextRequest) {
     
     const data = await response.json();
     
+    console.log('DELETE /api/inventory_categories - Response:', response.status, data);
+    
     if (!response.ok) {
       return NextResponse.json(data, { status: response.status });
     }
@@ -206,7 +214,7 @@ export async function DELETE(request: NextRequest) {
   } catch (error) {
     console.error('DELETE /api/inventory_categories error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

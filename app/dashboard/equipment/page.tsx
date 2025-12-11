@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Search, Filter, Zap, Package, AlertCircle, CheckCircle, Clock, TrendingUp, X, Calendar, MapPin, Wrench, Info } from 'lucide-react';
+import { Search, Filter, Zap, Package, AlertCircle, CheckCircle, Clock, TrendingUp, X, Calendar, MapPin, Wrench, Info, Plus, Edit2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface Equipment {
@@ -56,12 +56,41 @@ export default function EquipmentPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [categories, setCategories] = useState<string[]>([]);
+  const [categoryList, setCategoryList] = useState<{ category_id: string; category_name: string }[]>([]);
   const [selectedEquipment, setSelectedEquipment] = useState<EquipmentDetails | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [editingEquipment, setEditingEquipment] = useState<EquipmentDetails | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
+  const [formData, setFormData] = useState({
+    equipment_name: '',
+    equipment_code: '',
+    brand: '',
+    model: '',
+    category_id: '',
+    quantity_total: 0,
+    quantity_available: 0,
+    condition_status: 'good',
+    daily_rental_value: '',
+  });
 
   useEffect(() => {
     fetchEquipment();
+    fetchCategories();
   }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('/api/inventory_categories');
+      const data = await response.json();
+      
+      if (data.data) {
+        setCategoryList(data.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch categories:', error);
+    }
+  };
 
   const fetchEquipment = async () => {
     try {
@@ -108,6 +137,134 @@ export default function EquipmentPage() {
 
   const handleCloseModal = () => {
     setSelectedEquipment(null);
+  };
+
+  const handleOpenFormModal = (equipment?: EquipmentDetails) => {
+    if (equipment) {
+      setEditingEquipment(equipment);
+      setFormData({
+        equipment_name: equipment.equipment_name,
+        equipment_code: equipment.equipment_code,
+        brand: equipment.brand,
+        model: equipment.model,
+        category_id: equipment.category_id,
+        quantity_total: equipment.quantity_total,
+        quantity_available: equipment.quantity_available,
+        condition_status: equipment.condition_status,
+        daily_rental_value: equipment.daily_rental_value,
+      });
+    } else {
+      setEditingEquipment(null);
+      setFormData({
+        equipment_name: '',
+        equipment_code: '',
+        brand: '',
+        model: '',
+        category_id: '',
+        quantity_total: 0,
+        quantity_available: 0,
+        condition_status: 'good',
+        daily_rental_value: '',
+      });
+    }
+    setIsFormModalOpen(true);
+  };
+
+  const handleCloseFormModal = () => {
+    setIsFormModalOpen(false);
+    setEditingEquipment(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const url = editingEquipment 
+        ? `/api/inventory?equipment_id=${editingEquipment.equipment_id}`
+        : '/api/inventory';
+      
+      const method = editingEquipment ? 'PUT' : 'POST';
+      
+      console.log(`${method} ${url}`, formData);
+      
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error(`${method} failed:`, response.status, errorData);
+        throw new Error(errorData.error || errorData.message || `Failed to save equipment (${response.status})`);
+      }
+
+      const result = await response.json();
+      
+      // Show success message with new ID if creating
+      if (!editingEquipment && result.data?.equipment_id) {
+        toast.success(
+          <div>
+            <p className="font-semibold">Equipment created successfully!</p>
+            <p className="text-sm text-gray-600">ID: {result.data.equipment_id}</p>
+          </div>,
+          { duration: 4000 }
+        );
+        console.log('✅ New equipment ID:', result.data.equipment_id);
+      } else {
+        toast.success('Equipment updated successfully');
+      }
+      
+      handleCloseFormModal();
+      fetchEquipment();
+    } catch (error) {
+      console.error('Failed to save equipment:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to save equipment');
+    }
+  };
+
+  const handleDelete = async (equipmentId: string, equipmentName: string) => {
+    // Show custom confirmation dialog
+    setDeleteConfirm({ id: equipmentId, name: equipmentName });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm) return;
+
+    try {
+      console.log('DELETE /api/inventory?equipment_id=' + deleteConfirm.id);
+      
+      const response = await fetch(`/api/inventory?equipment_id=${deleteConfirm.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Delete failed:', response.status, errorData);
+        throw new Error(errorData.error || errorData.message || `Failed to delete equipment (${response.status})`);
+      }
+
+      toast.success(
+        <div>
+          <p className="font-semibold">Equipment deleted successfully!</p>
+          <p className="text-sm text-gray-600">{deleteConfirm.name}</p>
+        </div>,
+        { duration: 3000 }
+      );
+      
+      fetchEquipment();
+      if (selectedEquipment?.equipment_id === deleteConfirm.id) {
+        handleCloseModal();
+      }
+      setDeleteConfirm(null);
+    } catch (error) {
+      console.error('Failed to delete equipment:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to delete equipment');
+    }
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirm(null);
   };
 
   useEffect(() => {
@@ -174,11 +331,18 @@ export default function EquipmentPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Equipment Management</h1>
-          <p className="text-gray-600 mt-1">View and track all available equipment</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Equipment Management</h1>
+          <p className="text-gray-600 mt-1 text-sm sm:text-base">Manage and track all equipment inventory</p>
         </div>
+        <button
+          onClick={() => handleOpenFormModal()}
+          className="flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors w-full sm:w-auto"
+        >
+          <Plus size={20} />
+          Add Equipment
+        </button>
       </div>
 
       {/* Stats Cards */}
@@ -317,13 +481,27 @@ export default function EquipmentPage() {
                   </div>
                 </div>
 
-                {/* Footer Action */}
-                <div className="px-6 py-3 bg-gradient-to-r from-blue-50 to-blue-100 border-t border-gray-200">
+                {/* Footer Actions */}
+                <div className="px-6 py-3 bg-gray-50 border-t border-gray-200 flex gap-2">
                   <button
                     onClick={() => handleViewDetails(eq.equipment_id)}
-                    className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
+                    className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors text-sm"
                   >
                     View Details
+                  </button>
+                  <button
+                    onClick={() => handleOpenFormModal(eq as EquipmentDetails)}
+                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    title="Edit Equipment"
+                  >
+                    <Edit2 size={18} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(eq.equipment_id, eq.equipment_name)}
+                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Delete Equipment"
+                  >
+                    <Trash2 size={18} />
                   </button>
                 </div>
               </div>
@@ -585,6 +763,246 @@ export default function EquipmentPage() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Equipment Form Modal (Create/Edit) */}
+      {isFormModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <form onSubmit={handleSubmit}>
+              {/* Modal Header */}
+              <div className="flex justify-between items-center p-6 border-b border-gray-200 sticky top-0 bg-white">
+                <h2 className="text-xl font-bold text-gray-900">
+                  {editingEquipment ? 'Edit Equipment' : 'Add New Equipment'}
+                </h2>
+                <button
+                  type="button"
+                  onClick={handleCloseFormModal}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-6 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Equipment Name */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Equipment Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="equipment_name"
+                      value={formData.equipment_name}
+                      onChange={(e) => setFormData({ ...formData, equipment_name: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+
+                  {/* Equipment Code */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Equipment Code <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="equipment_code"
+                      value={formData.equipment_code}
+                      onChange={(e) => setFormData({ ...formData, equipment_code: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+
+                  {/* Brand */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Brand <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="brand"
+                      value={formData.brand}
+                      onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+
+                  {/* Model */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Model <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="model"
+                      value={formData.model}
+                      onChange={(e) => setFormData({ ...formData, model: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+
+                  {/* Category */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Category <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="category_id"
+                      value={formData.category_id}
+                      onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    >
+                      <option value="">Select a category</option>
+                      {categoryList.map((cat) => (
+                        <option key={cat.category_id} value={cat.category_id}>
+                          {cat.category_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Condition Status */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Condition Status <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="condition_status"
+                      value={formData.condition_status}
+                      onChange={(e) => setFormData({ ...formData, condition_status: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    >
+                      <option value="excellent">Excellent</option>
+                      <option value="good">Good</option>
+                      <option value="fair">Fair</option>
+                      <option value="poor">Poor</option>
+                    </select>
+                  </div>
+
+                  {/* Quantity Total */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Total Quantity <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      name="quantity_total"
+                      value={formData.quantity_total || ''}
+                      onChange={(e) => setFormData({ ...formData, quantity_total: parseInt(e.target.value) || 0 })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      min="0"
+                      required
+                    />
+                  </div>
+
+                  {/* Quantity Available */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Available Quantity <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      name="quantity_available"
+                      value={formData.quantity_available || ''}
+                      onChange={(e) => setFormData({ ...formData, quantity_available: parseInt(e.target.value) || 0 })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      min="0"
+                      required
+                    />
+                  </div>
+
+                  {/* Daily Rental Value */}
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Daily Rental Value <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="daily_rental_value"
+                      value={formData.daily_rental_value}
+                      onChange={(e) => setFormData({ ...formData, daily_rental_value: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="0.00"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
+                <button
+                  type="button"
+                  onClick={handleCloseFormModal}
+                  className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors"
+                >
+                  {editingEquipment ? 'Update Equipment' : 'Add Equipment'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl animate-fade-in">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mx-auto mb-4">
+                <AlertCircle className="text-red-600" size={32} />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 text-center">
+                Delete Equipment
+              </h2>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6">
+              <p className="text-gray-600 text-center mb-4">
+                Are you sure you want to delete this equipment?
+              </p>
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p className="text-sm text-gray-500 mb-1">Equipment Name:</p>
+                <p className="text-lg font-semibold text-red-800">{deleteConfirm.name}</p>
+              </div>
+              <p className="text-sm text-gray-500 text-center mt-4">
+                This action cannot be undone.
+              </p>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex gap-3 p-6 border-t border-gray-200 bg-gray-50">
+              <button
+                onClick={cancelDelete}
+                className="flex-1 px-4 py-3 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors"
+              >
+                Delete Equipment
+              </button>
+            </div>
           </div>
         </div>
       )}

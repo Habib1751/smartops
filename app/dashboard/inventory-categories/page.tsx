@@ -18,6 +18,7 @@ export default function InventoryCategoriesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
   const [formData, setFormData] = useState({
     category_name: '',
     description: '',
@@ -116,11 +117,28 @@ export default function InventoryCategoriesPage() {
         });
 
         if (response.ok) {
-          toast.success('Category created successfully');
+          const result = await response.json();
+          
+          // Show success message with new ID if available
+          if (result.data?.category_id) {
+            toast.success(
+              <div>
+                <p className="font-semibold">Category created successfully!</p>
+                <p className="text-sm text-gray-600">ID: {result.data.category_id}</p>
+              </div>,
+              { duration: 4000 }
+            );
+            console.log('✅ New category ID:', result.data.category_id);
+          } else {
+            toast.success('Category created successfully');
+          }
+          
           fetchCategories();
           handleCloseModal();
         } else {
-          toast.error('Failed to create category');
+          const errorData = await response.json().catch(() => ({}));
+          console.error('Create category failed:', response.status, errorData);
+          toast.error(errorData.error || `Failed to create category (${response.status})`);
         }
       }
     } catch (error) {
@@ -130,26 +148,41 @@ export default function InventoryCategoriesPage() {
   };
 
   const handleDelete = async (categoryId: string, categoryName: string) => {
-    if (!confirm(`Are you sure you want to delete "${categoryName}"? This will fail if equipment items are using this category.`)) {
-      return;
-    }
+    // Show custom confirmation dialog
+    setDeleteConfirm({ id: categoryId, name: categoryName });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm) return;
 
     try {
-      const response = await fetch(`/api/inventory_categories?category_id=${categoryId}`, {
+      const response = await fetch(`/api/inventory_categories?category_id=${deleteConfirm.id}`, {
         method: 'DELETE'
       });
 
       if (response.ok) {
-        toast.success('Category deleted successfully');
+        toast.success(
+          <div>
+            <p className="font-semibold">Category deleted successfully!</p>
+            <p className="text-sm text-gray-600">{deleteConfirm.name}</p>
+          </div>,
+          { duration: 3000 }
+        );
         fetchCategories();
+        setDeleteConfirm(null);
       } else {
-        const error = await response.json();
-        toast.error(error.error || 'Failed to delete category');
+        const error = await response.json().catch(() => ({}));
+        console.error('Delete category failed:', response.status, error);
+        toast.error(error.error || error.message || `Failed to delete category (${response.status})`);
       }
     } catch (error) {
       console.error('Error deleting category:', error);
-      toast.error('An error occurred');
+      toast.error('An error occurred: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirm(null);
   };
 
   if (loading) {
@@ -367,8 +400,8 @@ export default function InventoryCategoriesPage() {
                 </label>
                 <input
                   type="number"
-                  value={formData.sort_order}
-                  onChange={(e) => setFormData({ ...formData, sort_order: parseInt(e.target.value) })}
+                  value={formData.sort_order || ''}
+                  onChange={(e) => setFormData({ ...formData, sort_order: parseInt(e.target.value) || 0 })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                   min="1"
                 />
@@ -390,6 +423,56 @@ export default function InventoryCategoriesPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl animate-fade-in">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mx-auto mb-4">
+                <AlertCircle className="text-red-600" size={32} />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 text-center">
+                Delete Category
+              </h2>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6">
+              <p className="text-gray-600 text-center mb-4">
+                Are you sure you want to delete this category?
+              </p>
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p className="text-sm text-gray-500 mb-1">Category Name:</p>
+                <p className="text-lg font-semibold text-red-800">{deleteConfirm.name}</p>
+              </div>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-4">
+                <p className="text-sm text-yellow-800 flex items-start gap-2">
+                  <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
+                  <span>This will fail if equipment items are using this category.</span>
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex gap-3 p-6 border-t border-gray-200 bg-gray-50">
+              <button
+                onClick={cancelDelete}
+                className="flex-1 px-4 py-3 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors"
+              >
+                Delete Category
+              </button>
+            </div>
           </div>
         </div>
       )}
