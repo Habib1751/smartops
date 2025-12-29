@@ -31,6 +31,10 @@ export async function fetchApi<T = any>(
     const url = buildApiUrl(endpoint);
     console.log('🌐 Fetching from:', url);
     
+    if (options?.body) {
+      console.log('📤 Request body:', options.body);
+    }
+    
     const response = await fetch(url, {
       ...options,
       headers: {
@@ -42,7 +46,26 @@ export async function fetchApi<T = any>(
     console.log('📡 Response status:', response.status, response.statusText);
 
     if (!response.ok) {
-      throw new Error(`API error: ${response.status} ${response.statusText}`);
+      // Try to get error details from response
+      let errorDetails = '';
+      try {
+        const errorData = await response.json();
+        errorDetails = errorData.error || errorData.details || errorData.message || '';
+        console.error('❌ API error details:', errorData);
+      } catch (e) {
+        // If response is not JSON, try to get text
+        try {
+          errorDetails = await response.text();
+          console.error('❌ API error text:', errorDetails);
+        } catch (e2) {
+          console.error('❌ Could not parse error response');
+        }
+      }
+      
+      const errorMsg = errorDetails 
+        ? `API error: ${response.status} - ${errorDetails}`
+        : `API error: ${response.status} ${response.statusText}`;
+      throw new Error(errorMsg);
     }
 
     const data = await response.json();
@@ -168,5 +191,123 @@ export async function deleteInventory(equipmentId: string) {
   return await fetchApi(`/api/inventory?equipment_id=${equipmentId}`, {
     method: 'DELETE',
   });
+}
+
+// ==================== TECHNICIANS API ====================
+
+/**
+ * Fetch technicians from the API
+ * @param params - Query parameters for filtering technicians
+ */
+export async function fetchTechnicians(params?: { 
+  page?: number; 
+  per_page?: number; 
+  role?: string; 
+  skill_level?: string; 
+  is_active?: boolean; 
+  search?: string;
+  sort_by?: string;
+  sort_order?: string;
+}) {
+  let endpoint = '/api/management/technicians';
+  
+  if (params) {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+    if (params.role) queryParams.append('role', params.role);
+    if (params.skill_level) queryParams.append('skill_level', params.skill_level);
+    if (params.is_active !== undefined) queryParams.append('is_active', params.is_active.toString());
+    if (params.search) queryParams.append('search', params.search);
+    if (params.sort_by) queryParams.append('sort_by', params.sort_by);
+    if (params.sort_order) queryParams.append('sort_order', params.sort_order);
+    
+    const queryString = queryParams.toString();
+    if (queryString) {
+      endpoint += `?${queryString}`;
+    }
+  }
+  
+  const response = await fetchApi(endpoint);
+  return response;
+}
+
+/**
+ * Fetch a single technician by ID
+ * @param id - Technician UUID
+ */
+export async function fetchTechnicianById(id: string) {
+  return await fetchApi(`/api/management/technicians/${id}`);
+}
+
+/**
+ * Create a new technician
+ * @param technicianData - Technician data to create
+ */
+export async function createTechnician(technicianData: any) {
+  return await fetchApi('/api/management/technicians', {
+    method: 'POST',
+    body: JSON.stringify(technicianData),
+  });
+}
+
+/**
+ * Update an existing technician
+ * @param id - Technician UUID
+ * @param updateData - Data to update
+ */
+export async function updateTechnician(id: string, updateData: any) {
+  return await fetchApi(`/api/management/technicians/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updateData),
+  });
+}
+
+/**
+ * Delete a technician
+ * @param id - Technician UUID
+ * @param softDelete - Whether to soft delete (default: true)
+ */
+export async function deleteTechnician(id: string, softDelete: boolean = true) {
+  return await fetchApi(`/api/management/technicians/${id}?soft_delete=${softDelete}`, {
+    method: 'DELETE',
+  });
+}
+
+/**
+ * Fetch technician statistics
+ * @param id - Technician UUID
+ */
+export async function fetchTechnicianStats(id: string) {
+  return await fetchApi(`/api/management/technicians/${id}/stats`);
+}
+
+/**
+ * Check technician availability
+ * @param eventDate - Event date (YYYY-MM-DD)
+ * @param role - Optional role filter
+ * @param skillLevel - Optional skill level filter
+ */
+export async function checkTechnicianAvailability(eventDate: string, role?: string, skillLevel?: string) {
+  let endpoint = `/api/management/technicians/availability/check?event_date=${eventDate}`;
+  if (role) endpoint += `&role=${role}`;
+  if (skillLevel) endpoint += `&skill_level=${skillLevel}`;
+  return await fetchApi(endpoint);
+}
+
+/**
+ * Fetch technician schedule
+ * @param id - Technician UUID
+ * @param fromDate - Start date (YYYY-MM-DD)
+ * @param toDate - End date (YYYY-MM-DD)
+ */
+export async function fetchTechnicianSchedule(id: string, fromDate?: string, toDate?: string) {
+  let endpoint = `/api/management/technicians/${id}/schedule`;
+  const params = new URLSearchParams();
+  if (fromDate) params.append('from_date', fromDate);
+  if (toDate) params.append('to_date', toDate);
+  const queryString = params.toString();
+  if (queryString) endpoint += `?${queryString}`;
+  return await fetchApi(endpoint);
 }
 
