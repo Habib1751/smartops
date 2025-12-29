@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const EXTERNAL_API_BASE = 'https://smartops-dev-cjc6cadne5gwfja3.israelcentral-01.azurewebsites.net';
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const technicianId = params.id;
+    const { id: technicianId } = await params;
     const { searchParams } = new URL(request.url);
     const queryString = searchParams.toString();
     
@@ -33,10 +33,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const body = await request.json();
-    const technicianId = params.id;
+    const { id: technicianId } = await params;
     
     console.log('🔄 Updating technician:', technicianId);
     console.log('📦 Update data:', JSON.stringify(body, null, 2));
@@ -72,9 +72,9 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const technicianId = params.id;
+    const { id: technicianId } = await params;
     const { searchParams } = new URL(request.url);
     const softDelete = searchParams.get('soft_delete') !== 'false';
     

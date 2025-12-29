@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const EXTERNAL_API_BASE = 'https://smartops-dev-cjc6cadne5gwfja3.israelcentral-01.azurewebsites.net';
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const technicianId = params.id;
+    const { id: technicianId } = await params;
     
     console.log('🔄 Fetching technician stats:', technicianId);
     

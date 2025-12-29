@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 // Use server-side env variable (no NEXT_PUBLIC prefix) to hide from browser
 const EXTERNAL_API_BASE = 'https://smartops-dev-cjc6cadne5gwfja3.israelcentral-01.azurewebsites.net';
 
-export async function GET(request: NextRequest, { params }: { params: { id?: string } }) {
+export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const queryString = searchParams.toString();
