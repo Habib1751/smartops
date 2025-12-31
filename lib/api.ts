@@ -311,3 +311,176 @@ export async function fetchTechnicianSchedule(id: string, fromDate?: string, toD
   return await fetchApi(endpoint);
 }
 
+// ==================== ASSIGNMENTS API ====================
+
+/**
+ * Fetch assignments from the API
+ * @param params - Query parameters for filtering assignments
+ */
+export async function fetchAssignments(params?: {
+  page?: number;
+  per_page?: number;
+  technician_id?: string;
+  event_id?: string;
+  payment_status?: string;
+  attendance_status?: string;
+  from_date?: string;
+  to_date?: string;
+}) {
+  let endpoint = '/api/management/assignments';
+  
+  if (params) {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+    if (params.technician_id) queryParams.append('technician_id', params.technician_id);
+    if (params.event_id) queryParams.append('event_id', params.event_id);
+    if (params.payment_status) queryParams.append('payment_status', params.payment_status);
+    if (params.attendance_status) queryParams.append('attendance_status', params.attendance_status);
+    if (params.from_date) queryParams.append('from_date', params.from_date);
+    if (params.to_date) queryParams.append('to_date', params.to_date);
+    
+    const queryString = queryParams.toString();
+    if (queryString) {
+      endpoint += `?${queryString}`;
+    }
+  }
+  
+  const response = await fetchApi(endpoint);
+  return response;
+}
+
+/**
+ * Fetch a single assignment by ID
+ * @param id - Assignment UUID
+ */
+export async function fetchAssignmentById(id: string) {
+  return await fetchApi(`/api/management/assignments/${id}`);
+}
+
+/**
+ * Create a new assignment
+ * @param assignmentData - Assignment data to create
+ */
+export async function createAssignment(assignmentData: any) {
+  return await fetchApi('/api/management/assignments', {
+    method: 'POST',
+    body: JSON.stringify(assignmentData),
+  });
+}
+
+/**
+ * Update an existing assignment
+ * @param id - Assignment UUID
+ * @param updateData - Data to update
+ */
+export async function updateAssignment(id: string, updateData: any) {
+  return await fetchApi(`/api/management/assignments/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updateData),
+  });
+}
+
+/**
+ * Delete an assignment
+ * @param id - Assignment UUID
+ */
+export async function deleteAssignment(id: string) {
+  return await fetchApi(`/api/management/assignments/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+/**
+ * Send invitations to multiple assignments in bulk
+ * @param assignmentIds - Array of assignment UUIDs
+ */
+export async function bulkSendInvitations(assignmentIds: string[]) {
+  return await fetchApi('/api/management/assignments/bulk/send-invitations', {
+    method: 'POST',
+    body: JSON.stringify({ assignment_ids: assignmentIds }),
+  });
+}
+
+/**
+ * Update payment status for multiple assignments in bulk
+ * @param assignmentIds - Array of assignment UUIDs
+ * @param paymentStatus - New payment status
+ * @param paymentDate - Optional payment date
+ */
+export async function bulkUpdatePayment(
+  assignmentIds: string[], 
+  paymentStatus: string, 
+  paymentDate?: string
+) {
+  return await fetchApi('/api/management/assignments/bulk/update-payment', {
+    method: 'POST',
+    body: JSON.stringify({ 
+      assignment_ids: assignmentIds, 
+      payment_status: paymentStatus,
+      payment_date: paymentDate 
+    }),
+  });
+}
+
+/**
+ * Fetch assignments for a specific event
+ * @param eventId - Event UUID
+ */
+export async function fetchEventAssignments(eventId: string) {
+  return await fetchApi(`/api/management/events/${eventId}/assignments`);
+}
+
+// ==================== REPORTS API ====================
+
+/**
+ * Fetch payroll report
+ * @param fromDate - Start date (YYYY-MM-DD)
+ * @param toDate - End date (YYYY-MM-DD)
+ * @param paymentStatus - Optional payment status filter
+ */
+export async function fetchPayrollReport(
+  fromDate: string, 
+  toDate: string, 
+  paymentStatus?: string
+) {
+  let endpoint = `/api/management/reports/payroll?from_date=${fromDate}&to_date=${toDate}`;
+  if (paymentStatus) endpoint += `&payment_status=${paymentStatus}`;
+  return await fetchApi(endpoint);
+}
+
+/**
+ * Fetch performance report
+ * @param fromDate - Start date (YYYY-MM-DD)
+ * @param toDate - End date (YYYY-MM-DD)
+ */
+export async function fetchPerformanceReport(fromDate: string, toDate: string) {
+  return await fetchApi(`/api/management/reports/performance?from_date=${fromDate}&to_date=${toDate}`);
+}
+
+/**
+ * Fetch utilization report
+ * @param fromDate - Start date (YYYY-MM-DD)
+ * @param toDate - End date (YYYY-MM-DD)
+ */
+export async function fetchUtilizationReport(fromDate: string, toDate: string) {
+  return await fetchApi(`/api/management/reports/utilization?from_date=${fromDate}&to_date=${toDate}`);
+}
+
+/**
+ * Fetch upcoming crew report
+ * @param daysAhead - Number of days to look ahead (default: 30)
+ */
+export async function fetchUpcomingCrewReport(daysAhead?: number) {
+  let endpoint = '/api/management/reports/upcoming-crew';
+  if (daysAhead) endpoint += `?days_ahead=${daysAhead}`;
+  return await fetchApi(endpoint);
+}
+
+/**
+ * Fetch dashboard statistics
+ */
+export async function fetchDashboardReport() {
+  return await fetchApi('/api/management/reports/dashboard');
+}
+
