@@ -1,0 +1,150 @@
+{
+  "info": {
+    "name": "SmartOps - Assignment Management",
+    "_postman_id": "b5f8d3a8-assignments-collection",
+    "description": "Collection for Assignment Management endpoints (external API and local proxy).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "external_base", "value": "https://smartops-dev-cjc6cadne5gwfja3.israelcentral-01.azurewebsites.net/api/management" },
+    { "key": "local_base", "value": "http://localhost:3001/api/management" }
+  ],
+  "item": [
+    {
+      "name": "List Assignments (external)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": { "raw": "{{external_base}}/assignments?page=1&per_page=100", "host": ["{{external_base}}"], "path": ["assignments"], "query": [{ "key": "page", "value": "1" }, { "key": "per_page", "value": "100" }] }
+      },
+      "response": [],
+      "description": "Note: currently backend returns 500 (SQL error: column e.event_name does not exist)."
+    },
+    {
+      "name": "List Assignments (local proxy)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": { "raw": "{{local_base}}/assignments?page=1&per_page=100", "host": ["{{local_base}}"], "path": ["assignments"], "query": [{ "key": "page", "value": "1" }, { "key": "per_page", "value": "100" }] }
+      },
+      "response": [],
+      "description": "Use when dev server is running (proxy to external API)."
+    },
+    {
+      "name": "Create Assignment",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"event_id\": \"<event-id>\",\n  \"technician_id\": \"<technician-id>\",\n  \"role_for_event\": \"stage_manager\",\n  \"call_time\": \"18:00\",\n  \"agreed_rate\": 120.0\n}" },
+        "url": { "raw": "{{external_base}}/assignments", "host": ["{{external_base}}"], "path": ["assignments"] }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Assignment by ID",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": { "raw": "{{external_base}}/assignments/:assignment_id", "host": ["{{external_base}}"], "path": ["assignments", ":assignment_id"] }
+      },
+      "response": [],
+      "description": "Replace :assignment_id variable with real ID."
+    },
+    {
+      "name": "Update Assignment (PATCH)",
+      "request": {
+        "method": "PATCH",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"payment_status\": \"approved\"\n}" },
+        "url": { "raw": "{{external_base}}/assignments/:assignment_id", "host": ["{{external_base}}"], "path": ["assignments", ":assignment_id"] }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Assignment",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": { "raw": "{{external_base}}/assignments/:assignment_id", "host": ["{{external_base}}"], "path": ["assignments", ":assignment_id"] }
+      },
+      "response": []
+    },
+    {
+      "name": "Bulk - Send Invitations",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"assignment_ids\": [\"id1\", \"id2\"]\n}" },
+        "url": { "raw": "{{external_base}}/assignments/bulk/send-invitations", "host": ["{{external_base}}"], "path": ["assignments","bulk","send-invitations"] }
+      },
+      "response": [],
+      "description": "Returns 400 if assignment_ids missing."
+    },
+    {
+      "name": "Bulk - Update Payment",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"assignment_ids\": [\"id1\"],\n  \"status\": \"paid\",\n  \"payment_date\": \"2025-12-30\"\n}" },
+        "url": { "raw": "{{external_base}}/assignments/bulk/update-payment", "host": ["{{external_base}}"], "path": ["assignments","bulk","update-payment"] }
+      },
+      "response": []
+    },
+    {
+      "name": "Event Assignments",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": { "raw": "{{external_base}}/events/:event_id/assignments?page=1&per_page=5", "host": ["{{external_base}}"], "path": ["events",":event_id","assignments"], "query": [{ "key": "page", "value": "1" }, { "key": "per_page", "value": "5" }] }
+      },
+      "response": [],
+      "description": "Note: this currently returns 500 due to same SQL column issue."
+    },
+    {
+      "name": "Report - Payroll",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": { "raw": "{{external_base}}/reports/payroll?from_date=2025-01-01&to_date=2025-12-31", "host": ["{{external_base}}"], "path": ["reports","payroll"], "query": [{ "key": "from_date", "value": "2025-01-01" }, { "key": "to_date", "value": "2025-12-31" }] }
+      },
+      "response": [],
+      "description": "Reports require from_date and to_date; otherwise return 400."
+    },
+    {
+      "name": "Report - Performance",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": { "raw": "{{external_base}}/reports/performance?from_date=2025-01-01&to_date=2025-12-31", "host": ["{{external_base}}"], "path": ["reports","performance"], "query": [{ "key": "from_date", "value": "2025-01-01" }, { "key": "to_date", "value": "2025-12-31" }] }
+      },
+      "response": []
+    },
+    {
+      "name": "Report - Utilization",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": { "raw": "{{external_base}}/reports/utilization?from_date=2025-01-01&to_date=2025-12-31", "host": ["{{external_base}}"], "path": ["reports","utilization"], "query": [{ "key": "from_date", "value": "2025-01-01" }, { "key": "to_date", "value": "2025-12-31" }] }
+      },
+      "response": []
+    },
+    {
+      "name": "Report - Upcoming Crew",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": { "raw": "{{external_base}}/reports/upcoming-crew?from_date=2025-12-01&to_date=2025-12-31", "host": ["{{external_base}}"], "path": ["reports","upcoming-crew"], "query": [{ "key": "from_date", "value": "2025-12-01" }, { "key": "to_date", "value": "2025-12-31" }] }
+      },
+      "response": []
+    },
+    {
+      "name": "Report - Dashboard",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": { "raw": "{{external_base}}/reports/dashboard", "host": ["{{external_base}}"], "path": ["reports","dashboard"] }
+      },
+      "response": []
+    }
+  ]
+}
