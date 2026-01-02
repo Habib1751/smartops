@@ -27,7 +27,9 @@ export default function EventModal({ isOpen, onClose, onSubmit, initialData, mod
     event_start_time: '',
     event_end_time: '',
     load_in_time: '',
+    load_out_time: '',
     sound_check_time: '',
+    total_working_hours: '',
     base_package_price: '',
     travel_fee: '',
     total_price: '',
@@ -55,7 +57,9 @@ export default function EventModal({ isOpen, onClose, onSubmit, initialData, mod
         event_start_time: initialData.event_start_time?.substring(0, 5) || '',
         event_end_time: initialData.event_end_time?.substring(0, 5) || '',
         load_in_time: initialData.load_in_time?.substring(0, 5) || '',
+        load_out_time: initialData.load_out_time?.substring(0, 5) || '',
         sound_check_time: initialData.sound_check_time?.substring(0, 5) || '',
+        total_working_hours: initialData.total_working_hours?.toString() || '',
         base_package_price: initialData.base_package_price?.toString() || '',
         travel_fee: initialData.travel_fee?.toString() || '',
         total_price: initialData.total_price?.toString() || '',
@@ -79,7 +83,9 @@ export default function EventModal({ isOpen, onClose, onSubmit, initialData, mod
         event_start_time: '',
         event_end_time: '',
         load_in_time: '',
+        load_out_time: '',
         sound_check_time: '',
+        total_working_hours: '',
         base_package_price: '',
         travel_fee: '',
         total_price: '',
@@ -97,42 +103,45 @@ export default function EventModal({ isOpen, onClose, onSubmit, initialData, mod
     setIsSubmitting(true);
     
     try {
+      // Calculate financial fields
+      const basePrice = formData.base_package_price ? parseFloat(formData.base_package_price) : 0;
+      const travelFee = formData.travel_fee ? parseFloat(formData.travel_fee) : 0;
+      const totalPrice = formData.total_price ? parseFloat(formData.total_price) : (basePrice + travelFee);
+      
+      // Calculate subtotal_before_vat (required field)
+      const subtotalBeforeVat = totalPrice || 0;
+      const vatAmount = subtotalBeforeVat * 0.17; // 17% VAT in Israel
+      
       const submitData: any = {
-        event_code: formData.event_code || undefined,
+        // Required fields - always send with defaults
         event_status: formData.event_status,
         event_type: formData.event_type,
-        event_date: formData.event_date || undefined,
-        event_location: formData.event_location || undefined,
-        artist_name: formData.artist_name || undefined,
-        estimated_guests: formData.estimated_guests ? parseInt(formData.estimated_guests) : undefined,
-        event_start_time: formData.event_start_time ? `${formData.event_start_time}:00` : undefined,
-        event_end_time: formData.event_end_time ? `${formData.event_end_time}:00` : undefined,
-        load_in_time: formData.load_in_time ? `${formData.load_in_time}:00` : undefined,
-        sound_check_time: formData.sound_check_time ? `${formData.sound_check_time}:00` : undefined,
-        base_package_price: formData.base_package_price ? parseFloat(formData.base_package_price) : undefined,
-        travel_fee: formData.travel_fee ? parseFloat(formData.travel_fee) : undefined,
-        total_price: formData.total_price ? parseFloat(formData.total_price) : undefined,
-        payment_status: formData.payment_status,
-        deposit_paid: formData.deposit_paid,
-        technicians_assigned: formData.technicians_assigned,
-        equipment_prepared: formData.equipment_prepared,
-        special_notes: formData.notes || undefined,
+        total_working_hours: formData.total_working_hours ? parseInt(formData.total_working_hours) : 0,
+        base_package_price: basePrice,
+        travel_fee: travelFee,
+        subtotal_before_vat: subtotalBeforeVat,
+        vat_amount: vatAmount,
+        total_price: totalPrice,
+        payment_status: formData.payment_status || 'pending',
+        deposit_paid: formData.deposit_paid || false,
+        technicians_assigned: formData.technicians_assigned || false,
+        equipment_prepared: formData.equipment_prepared || false,
       };
 
-      // Only include client_id and lead_id if they have values (valid UUIDs)
-      if (formData.client_id && formData.client_id.trim()) {
-        submitData.client_id = formData.client_id;
-      }
-      if (formData.lead_id && formData.lead_id.trim()) {
-        submitData.lead_id = formData.lead_id;
-      }
-
-      // Remove undefined values
-      Object.keys(submitData).forEach(key => {
-        if (submitData[key] === undefined) {
-          delete submitData[key];
-        }
-      });
+      // Optional fields - only send if provided
+      if (formData.event_code) submitData.event_code = formData.event_code;
+      if (formData.event_date) submitData.event_date = formData.event_date;
+      if (formData.event_location) submitData.event_location = formData.event_location;
+      if (formData.artist_name) submitData.artist_name = formData.artist_name;
+      if (formData.estimated_guests) submitData.estimated_guests = parseInt(formData.estimated_guests);
+      if (formData.event_start_time) submitData.event_start_time = `${formData.event_start_time}:00`;
+      if (formData.event_end_time) submitData.event_end_time = `${formData.event_end_time}:00`;
+      if (formData.load_in_time) submitData.load_in_time = `${formData.load_in_time}:00`;
+      if (formData.load_out_time) submitData.load_out_time = `${formData.load_out_time}:00`;
+      if (formData.sound_check_time) submitData.sound_check_time = `${formData.sound_check_time}:00`;
+      if (formData.notes) submitData.special_notes = formData.notes;
+      if (formData.client_id && formData.client_id.trim()) submitData.client_id = formData.client_id;
+      if (formData.lead_id && formData.lead_id.trim()) submitData.lead_id = formData.lead_id;
 
       if (mode === 'create') {
         await createEvent(submitData);
@@ -403,6 +412,35 @@ export default function EventModal({ isOpen, onClose, onSubmit, initialData, mod
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-black mb-1">
+                  Load-out Time
+                </label>
+                <input
+                  type="time"
+                  name="load_out_time"
+                  value={formData.load_out_time}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-black mb-1">
+                  Total Working Hours
+                </label>
+                <input
+                  type="number"
+                  name="total_working_hours"
+                  value={formData.total_working_hours}
+                  onChange={handleChange}
+                  placeholder="8"
+                  min="0"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                />
+                <p className="text-xs text-gray-500 mt-1">Total hours from load-in to load-out</p>
               </div>
             </div>
           </div>

@@ -8,10 +8,10 @@ const EXTERNAL_API_BASE = process.env.BACKEND_API_URL || 'https://smartops-dev-c
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const externalUrl = `${EXTERNAL_API_BASE}/api/management/events/${id}`;
 
     console.log('🔄 Fetching event from:', externalUrl);
@@ -52,10 +52,10 @@ export async function GET(
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
 
     console.log('🔄 Updating event:', id);
@@ -101,10 +101,10 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     console.log('🔄 Deleting event:', id);
 

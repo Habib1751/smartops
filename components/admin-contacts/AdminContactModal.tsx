@@ -15,7 +15,7 @@ type AdminContactModalProps = {
 export default function AdminContactModal({ isOpen, onClose, onSubmit, initialData, mode }: AdminContactModalProps) {
   const [formData, setFormData] = useState({
     name: '',
-    role: 'general',
+    role: 'admin',
     whatsapp_number: '',
     is_primary: false,
     is_active: true,
@@ -28,7 +28,7 @@ export default function AdminContactModal({ isOpen, onClose, onSubmit, initialDa
     if (initialData && mode === 'edit') {
       setFormData({
         name: initialData.name || '',
-        role: initialData.role || 'general',
+        role: initialData.role || 'admin',
         whatsapp_number: initialData.whatsapp_number || '',
         is_primary: initialData.is_primary || false,
         is_active: initialData.is_active !== undefined ? initialData.is_active : true,
@@ -39,7 +39,7 @@ export default function AdminContactModal({ isOpen, onClose, onSubmit, initialDa
     } else if (mode === 'create') {
       setFormData({
         name: '',
-        role: 'general',
+        role: 'admin',
         whatsapp_number: '',
         is_primary: false,
         is_active: true,
@@ -147,7 +147,7 @@ export default function AdminContactModal({ isOpen, onClose, onSubmit, initialDa
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                 >
-                  <option value="general">General</option>
+                  <option value="admin">Admin</option>
                   <option value="sales">Sales</option>
                   <option value="technical">Technical</option>
                   <option value="support">Support</option>
