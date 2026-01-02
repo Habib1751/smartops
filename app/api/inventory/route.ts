@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 // External API base URL
-const EXTERNAL_API_BASE = 'https://smartops-dev-cjc6cadne5gwfja3.israelcentral-01.azurewebsites.net';
+const EXTERNAL_API_BASE = process.env.BACKEND_API_URL || 'https://smartops-dev-cjc6cadne5gwfja3.israelcentral-01.azurewebsites.net';
 
 /**
  * GET /api/inventory

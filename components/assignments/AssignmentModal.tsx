@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Calendar, User, DollarSign, Clock, MapPin, Star } from 'lucide-react';
-import { fetchTechnicians } from '@/lib/api';
+import { X, Calendar, User, DollarSign, Clock, MapPin, Briefcase, FileText } from 'lucide-react';
+import { fetchTechnicians, fetchEvents } from '@/lib/api';
 import toast from 'react-hot-toast';
 
 type AssignmentModalProps = {
@@ -29,7 +29,9 @@ export default function AssignmentModal({ isOpen, onClose, onSubmit, initialData
   });
   
   const [technicians, setTechnicians] = useState<any[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
   const [loadingTechnicians, setLoadingTechnicians] = useState(false);
+  const [loadingEvents, setLoadingEvents] = useState(false);
 
   useEffect(() => {
     if (initialData && mode === 'edit') {
@@ -63,10 +65,11 @@ export default function AssignmentModal({ isOpen, onClose, onSubmit, initialData
     }
   }, [initialData, mode, isOpen]);
 
-  // Load technicians when modal opens in create mode
+  // Load technicians and events when modal opens in create mode
   useEffect(() => {
     if (isOpen && mode === 'create') {
       loadTechnicians();
+      loadEvents();
     }
   }, [isOpen, mode]);
 
@@ -77,15 +80,46 @@ export default function AssignmentModal({ isOpen, onClose, onSubmit, initialData
       setTechnicians(response.data || []);
     } catch (error) {
       console.error('Failed to load technicians:', error);
-      // Don't show error toast - just log it
       setTechnicians([]);
     } finally {
       setLoadingTechnicians(false);
     }
   };
 
+  const loadEvents = async () => {
+    try {
+      setLoadingEvents(true);
+      console.log('🔍 Loading events for dropdown...');
+      const response = await fetchEvents({ per_page: 100 });
+      console.log('📦 Events response:', response);
+      const eventsList = response.data || response || [];
+      console.log('✅ Events loaded:', eventsList.length, 'events');
+      setEvents(eventsList);
+    } catch (error: any) {
+      console.error('❌ Failed to load events:', error);
+      console.log('ℹ️ This is normal if Events API is not yet implemented in backend');
+      console.log('ℹ️ Or if no events exist in the database');
+      setEvents([]);
+      // Don't show error toast - user will see "No events found" message in dropdown
+    } finally {
+      setLoadingEvents(false);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (mode === 'create') {
+      if (!formData.event_id) {
+        toast.error('Please select an event');
+        return;
+      }
+      
+      if (!formData.technician_id) {
+        toast.error('Please select a technician');
+        return;
+      }
+    }
     
     const submitData: any = {
       role_for_event: formData.role_for_event,
@@ -132,11 +166,11 @@ export default function AssignmentModal({ isOpen, onClose, onSubmit, initialData
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-xl">
+        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-lg">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-black">
               {mode === 'create' ? 'Create New Assignment' : 'Edit Assignment'}
             </h2>
             <p className="text-sm text-gray-600 mt-1">
@@ -157,33 +191,69 @@ export default function AssignmentModal({ isOpen, onClose, onSubmit, initialData
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Assignment Details Section */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-black mb-4 flex items-center gap-2">
               <Calendar className="w-5 h-5 text-blue-600" />
               Assignment Details
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {mode === 'create' && (
                 <>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Event ID <span className="text-red-500">*</span>
+                  {/* Event Dropdown */}
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-black mb-1">
+                      Event <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="text"
-                      name="event_id"
-                      value={formData.event_id}
-                      onChange={handleChange}
-                      placeholder="Enter event UUID"
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      💡 Get event ID from Events section. Format: 550e8400-e29b-41d4-a716-446655440000
-                    </p>
+                    {loadingEvents ? (
+                      <div className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
+                        Loading events...
+                      </div>
+                    ) : (
+                      <select
+                        name="event_id"
+                        value={formData.event_id}
+                        onChange={handleChange}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                      >
+                        <option value="">Select event...</option>
+                        {events.map((event) => (
+                          <option key={event.event_id} value={event.event_id}>
+                            {event.name || event.event_name || 'Unnamed Event'} - {event.event_date || 'No date'}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                    {events.length === 0 && !loadingEvents && (
+                      <p className="text-xs text-gray-600 mt-2">
+                        No events found. You may enter the Event ID manually below.
+                      </p>
+                    )}
+                    
+                    {/* Manual Event ID Input (Fallback) */}
+                    {events.length === 0 && !loadingEvents && (
+                      <div className="mt-3">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                          Or Enter Event ID Manually:
+                        </label>
+                        <input
+                          type="text"
+                          name="event_id"
+                          value={formData.event_id}
+                          onChange={handleChange}
+                          placeholder="e.g., 550e8400-e29b-41d4-a716-446655440000"
+                          pattern="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black font-mono text-sm"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          UUID format: 8-4-4-4-12 hex characters (0-9, a-f only)
+                        </p>
+                      </div>
+                    )}
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {/* Technician Dropdown */}
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-black mb-1">
                       Technician <span className="text-red-500">*</span>
                     </label>
                     {loadingTechnicians ? (
@@ -196,7 +266,7 @@ export default function AssignmentModal({ isOpen, onClose, onSubmit, initialData
                         value={formData.technician_id}
                         onChange={handleChange}
                         required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                       >
                         <option value="">Select technician...</option>
                         {technicians.map((tech) => (
@@ -207,7 +277,7 @@ export default function AssignmentModal({ isOpen, onClose, onSubmit, initialData
                       </select>
                     )}
                     {technicians.length === 0 && !loadingTechnicians && (
-                      <p className="text-xs text-red-500 mt-1">
+                      <p className="text-xs text-red-600 mt-1">
                         No active technicians found. Please add technicians first.
                       </p>
                     )}
@@ -215,8 +285,9 @@ export default function AssignmentModal({ isOpen, onClose, onSubmit, initialData
                 </>
               )}
 
-              <div className={mode === 'edit' ? 'md:col-span-2' : ''}>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+              {/* Role for Event */}
+              <div className={mode === 'edit' ? 'md:col-span-2' : 'md:col-span-2'}>
+                <label className="block text-sm font-medium text-black mb-1">
                   Role for Event <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -226,7 +297,7 @@ export default function AssignmentModal({ isOpen, onClose, onSubmit, initialData
                   onChange={handleChange}
                   placeholder="e.g., Lead Operator, Audio Technician"
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                 />
               </div>
             </div>
@@ -234,13 +305,13 @@ export default function AssignmentModal({ isOpen, onClose, onSubmit, initialData
 
           {/* Schedule Section */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-black mb-4 flex items-center gap-2">
               <Clock className="w-5 h-5 text-blue-600" />
               Schedule
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-black mb-1">
                   Call Time <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -249,12 +320,12 @@ export default function AssignmentModal({ isOpen, onClose, onSubmit, initialData
                   value={formData.call_time}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-black mb-1">
                   Estimated Finish Time
                 </label>
                 <input
@@ -262,13 +333,13 @@ export default function AssignmentModal({ isOpen, onClose, onSubmit, initialData
                   name="estimated_finish_time"
                   value={formData.estimated_finish_time}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                 />
               </div>
 
               {mode === 'edit' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-black mb-1">
                     Hours Worked
                   </label>
                   <input
@@ -279,7 +350,7 @@ export default function AssignmentModal({ isOpen, onClose, onSubmit, initialData
                     placeholder="0"
                     step="0.5"
                     min="0"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                   />
                 </div>
               )}
@@ -288,13 +359,13 @@ export default function AssignmentModal({ isOpen, onClose, onSubmit, initialData
 
           {/* Payment Section */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-black mb-4 flex items-center gap-2">
               <DollarSign className="w-5 h-5 text-blue-600" />
               Payment
             </h3>
             <div className={`grid grid-cols-1 ${mode === 'edit' ? 'md:grid-cols-2' : ''} gap-4`}>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-black mb-1">
                   Agreed Rate (per hour) <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -308,26 +379,26 @@ export default function AssignmentModal({ isOpen, onClose, onSubmit, initialData
                     step="0.01"
                     min="0"
                     required
-                    className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                   />
                 </div>
                 {mode === 'create' && (
                   <p className="text-xs text-gray-500 mt-1">
-                    💡 Total payment will be calculated automatically: Rate × Hours Worked (after event)
+                    Total payment will be calculated automatically: Rate × Hours Worked (after event)
                   </p>
                 )}
               </div>
 
               {mode === 'edit' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-black mb-1">
                     Payment Status
                   </label>
                   <select
                     name="payment_status"
                     value={formData.payment_status}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                   >
                     <option value="pending">Pending</option>
                     <option value="approved">Approved</option>
@@ -342,20 +413,20 @@ export default function AssignmentModal({ isOpen, onClose, onSubmit, initialData
           {/* Status & Rating Section */}
           {mode === 'edit' && (
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <Star className="w-5 h-5 text-blue-600" />
+              <h3 className="text-lg font-semibold text-black mb-4 flex items-center gap-2">
+                <User className="w-5 h-5 text-blue-600" />
                 Status & Performance
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-black mb-1">
                     Attendance Status
                   </label>
                   <select
                     name="attendance_status"
                     value={formData.attendance_status}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                   >
                     <option value="scheduled">Scheduled</option>
                     <option value="confirmed">Confirmed</option>
@@ -366,7 +437,7 @@ export default function AssignmentModal({ isOpen, onClose, onSubmit, initialData
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-black mb-1">
                     Performance Rating (1-5)
                   </label>
                   <input
@@ -377,7 +448,7 @@ export default function AssignmentModal({ isOpen, onClose, onSubmit, initialData
                     placeholder="Rate 1-5"
                     min="1"
                     max="5"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                   />
                 </div>
               </div>
@@ -386,7 +457,7 @@ export default function AssignmentModal({ isOpen, onClose, onSubmit, initialData
 
           {/* Notes Section */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-black mb-1">
               Notes
             </label>
             <textarea
@@ -395,7 +466,7 @@ export default function AssignmentModal({ isOpen, onClose, onSubmit, initialData
               onChange={handleChange}
               placeholder="Add any additional notes or comments..."
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-black"
             />
           </div>
 

@@ -1,17 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Use server-side env variable (no NEXT_PUBLIC prefix) to hide from browser
 const EXTERNAL_API_BASE = process.env.BACKEND_API_URL || 'https://smartops-dev-cjc6cadne5gwfja3.israelcentral-01.azurewebsites.net';
 
+/**
+ * GET /api/management/admin_contacts/[id]
+ * Get a single admin contact by ID
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: assignmentId } = await params;
-    const externalUrl = `${EXTERNAL_API_BASE}/api/management/assignments/${assignmentId}`;
+    const { id } = await params;
+    const externalUrl = `${EXTERNAL_API_BASE}/api/management/admin_contacts/${id}`;
     
-    console.log('🔄 Server-side proxying to external API:', externalUrl);
+    console.log('🔄 Fetching admin contact:', id);
+    console.log('🔗 GET URL:', externalUrl);
     
     const response = await fetch(externalUrl, {
       headers: {
@@ -20,10 +24,11 @@ export async function GET(
       cache: 'no-store',
     });
 
+    console.log('📡 External API response status:', response.status, response.statusText);
+
     if (!response.ok) {
-      console.error('❌ External API returned error:', response.status, response.statusText);
       const errorText = await response.text();
-      console.error('❌ Error details:', errorText);
+      console.error('❌ External API error response:', errorText);
       
       let errorData;
       try {
@@ -39,36 +44,31 @@ export async function GET(
     }
 
     const data = await response.json();
-    console.log('✅ Successfully fetched assignment from external API');
-    
-    return NextResponse.json(data, {
-      headers: {
-        'Cache-Control': 'no-store, max-age=0',
-      },
-    });
+    console.log('✅ Successfully fetched admin contact');
+    return NextResponse.json(data);
   } catch (error: any) {
-    console.error('❌ Error proxying assignment request:', error.message);
+    console.error('❌ Error fetching admin contact:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to fetch assignment from external API',
-        details: error.message 
-      },
+      { success: false, error: 'Failed to fetch admin contact', details: error.message },
       { status: 500 }
     );
   }
 }
 
+/**
+ * PATCH /api/management/admin_contacts/[id]
+ * Update an existing admin contact (partial update)
+ */
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: assignmentId } = await params;
+    const { id } = await params;
     const body = await request.json();
-    const externalUrl = `${EXTERNAL_API_BASE}/api/management/assignments/${assignmentId}`;
+    const externalUrl = `${EXTERNAL_API_BASE}/api/management/admin_contacts/${id}`;
     
-    console.log('🔄 Updating assignment');
+    console.log('🔄 Updating admin contact:', id);
     console.log('📦 Update data:', JSON.stringify(body, null, 2));
     console.log('🔗 PATCH URL:', externalUrl);
     
@@ -100,35 +100,42 @@ export async function PATCH(
     }
 
     const data = await response.json();
-    console.log('✅ Successfully updated assignment');
+    console.log('✅ Successfully updated admin contact');
     return NextResponse.json(data);
   } catch (error: any) {
-    console.error('❌ Error updating assignment:', error);
+    console.error('❌ Error updating admin contact:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to update assignment', details: error.message },
+      { success: false, error: 'Failed to update admin contact', details: error.message },
       { status: 500 }
     );
   }
 }
 
+/**
+ * DELETE /api/management/admin_contacts/[id]
+ * Delete an admin contact
+ */
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: assignmentId } = await params;
-    const externalUrl = `${EXTERNAL_API_BASE}/api/management/assignments/${assignmentId}`;
+    const { id } = await params;
+    const externalUrl = `${EXTERNAL_API_BASE}/api/management/admin_contacts/${id}`;
     
-    console.log('🔄 Deleting assignment');
+    console.log('🔄 Deleting admin contact:', id);
     console.log('🔗 DELETE URL:', externalUrl);
     
     const response = await fetch(externalUrl, {
       method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
 
     console.log('📡 External API response status:', response.status, response.statusText);
 
-    if (!response.ok) {
+    if (!response.ok && response.status !== 204) {
       const errorText = await response.text();
       console.error('❌ External API error response:', errorText);
       
@@ -145,19 +152,12 @@ export async function DELETE(
       );
     }
 
-    // 204 No Content
-    if (response.status === 204) {
-      console.log('✅ Successfully deleted assignment');
-      return new NextResponse(null, { status: 204 });
-    }
-
-    const data = await response.json();
-    console.log('✅ Successfully deleted assignment');
-    return NextResponse.json(data);
+    console.log('✅ Successfully deleted admin contact');
+    return new NextResponse(null, { status: 204 });
   } catch (error: any) {
-    console.error('❌ Error deleting assignment:', error);
+    console.error('❌ Error deleting admin contact:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to delete assignment', details: error.message },
+      { success: false, error: 'Failed to delete admin contact', details: error.message },
       { status: 500 }
     );
   }
