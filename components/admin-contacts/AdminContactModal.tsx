@@ -15,7 +15,7 @@ type AdminContactModalProps = {
 export default function AdminContactModal({ isOpen, onClose, onSubmit, initialData, mode }: AdminContactModalProps) {
   const [formData, setFormData] = useState({
     name: '',
-    role: 'general',
+    role: 'admin',
     whatsapp_number: '',
     is_primary: false,
     is_active: true,
@@ -28,7 +28,7 @@ export default function AdminContactModal({ isOpen, onClose, onSubmit, initialDa
     if (initialData && mode === 'edit') {
       setFormData({
         name: initialData.name || '',
-        role: initialData.role || 'general',
+        role: initialData.role || 'admin',
         whatsapp_number: initialData.whatsapp_number || '',
         is_primary: initialData.is_primary || false,
         is_active: initialData.is_active !== undefined ? initialData.is_active : true,
@@ -39,7 +39,7 @@ export default function AdminContactModal({ isOpen, onClose, onSubmit, initialDa
     } else if (mode === 'create') {
       setFormData({
         name: '',
-        role: 'general',
+        role: 'admin',
         whatsapp_number: '',
         is_primary: false,
         is_active: true,
@@ -53,9 +53,9 @@ export default function AdminContactModal({ isOpen, onClose, onSubmit, initialDa
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate WhatsApp number format
-    if (!formData.whatsapp_number.match(/^\+972\d{9,10}$/)) {
-      toast.error('WhatsApp number must be in format: +972XXXXXXXXX');
+    // Validate WhatsApp number format (E.164: +[country code][number], 7-15 digits)
+    if (!formData.whatsapp_number.match(/^\+\d{7,15}$/)) {
+      toast.error('WhatsApp number must be in international format (E.164), e.g. +972501234567 or +923012345678');
       return;
     }
     
@@ -147,7 +147,7 @@ export default function AdminContactModal({ isOpen, onClose, onSubmit, initialDa
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                 >
-                  <option value="general">General</option>
+                  <option value="admin">Admin</option>
                   <option value="sales">Sales</option>
                   <option value="technical">Technical</option>
                   <option value="support">Support</option>
@@ -166,12 +166,12 @@ export default function AdminContactModal({ isOpen, onClose, onSubmit, initialDa
                   onChange={handleChange}
                   placeholder="+972501234567"
                   required
-                  pattern="\+972\d{9,10}"
+                  pattern="\+\d{7,15}"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black font-mono"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Format: +972XXXXXXXXX (Israeli phone number)
-                </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Format: +[country code][number] (E.164). Placeholder shows an Israeli example (+972...), other country numbers are accepted.
+                  </p>
               </div>
 
               <div className="md:col-span-2">

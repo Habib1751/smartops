@@ -437,41 +437,6 @@ export async function fetchEventAssignments(eventId: string) {
   return await fetchApi(`/api/management/events/${eventId}/assignments`);
 }
 
-// ==================== EVENTS API ====================
-
-/**
- * Fetch events from the API
- * @param params - Query parameters for filtering events
- */
-export async function fetchEvents(params?: {
-  page?: number;
-  per_page?: number;
-  status?: string;
-  from_date?: string;
-  to_date?: string;
-  search?: string;
-}) {
-  let endpoint = '/api/management/events';
-  
-  if (params) {
-    const queryParams = new URLSearchParams();
-    if (params.page) queryParams.append('page', params.page.toString());
-    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
-    if (params.status) queryParams.append('status', params.status);
-    if (params.from_date) queryParams.append('from_date', params.from_date);
-    if (params.to_date) queryParams.append('to_date', params.to_date);
-    if (params.search) queryParams.append('search', params.search);
-    
-    const queryString = queryParams.toString();
-    if (queryString) {
-      endpoint += `?${queryString}`;
-    }
-  }
-  
-  const response = await fetchApi(endpoint);
-  return response;
-}
-
 // ==================== REPORTS API ====================
 
 /**
@@ -591,6 +556,90 @@ export async function updateAdminContact(id: number, updateData: any) {
  */
 export async function deleteAdminContact(id: number) {
   return await fetchApi(`/api/management/admin_contacts/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+/**
+ * Fetch events with filtering, pagination, and search
+ * @param params - Query parameters
+ */
+export async function fetchEvents(params?: {
+  page?: number;
+  per_page?: number;
+  event_status?: string;
+  event_type?: string;
+  from_date?: string;
+  to_date?: string;
+  client_id?: string;
+  lead_id?: string;
+  search?: string;
+  sort_by?: string;
+  sort_order?: string;
+}) {
+  let endpoint = '/api/management/events';
+  
+  if (params) {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+    if (params.event_status) queryParams.append('event_status', params.event_status);
+    if (params.event_type) queryParams.append('event_type', params.event_type);
+    if (params.from_date) queryParams.append('from_date', params.from_date);
+    if (params.to_date) queryParams.append('to_date', params.to_date);
+    if (params.client_id) queryParams.append('client_id', params.client_id);
+    if (params.lead_id) queryParams.append('lead_id', params.lead_id);
+    if (params.search) queryParams.append('search', params.search);
+    if (params.sort_by) queryParams.append('sort_by', params.sort_by);
+    if (params.sort_order) queryParams.append('sort_order', params.sort_order);
+    
+    const queryString = queryParams.toString();
+    if (queryString) {
+      endpoint += `?${queryString}`;
+    }
+  }
+  
+  const response = await fetchApi(endpoint);
+  return response;
+}
+
+/**
+ * Fetch a single event by ID
+ * @param id - Event UUID
+ */
+export async function fetchEventById(id: string) {
+  return await fetchApi(`/api/management/events/${id}`);
+}
+
+/**
+ * Create a new event
+ * @param eventData - Event data to create
+ */
+export async function createEvent(eventData: any) {
+  return await fetchApi('/api/management/events', {
+    method: 'POST',
+    body: JSON.stringify(eventData),
+  });
+}
+
+/**
+ * Update an existing event
+ * @param id - Event UUID
+ * @param updateData - Data to update
+ */
+export async function updateEvent(id: string, updateData: any) {
+  return await fetchApi(`/api/management/events/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updateData),
+  });
+}
+
+/**
+ * Delete an event
+ * @param id - Event UUID
+ */
+export async function deleteEvent(id: string) {
+  return await fetchApi(`/api/management/events/${id}`, {
     method: 'DELETE',
   });
 }
