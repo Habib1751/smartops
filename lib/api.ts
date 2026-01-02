@@ -68,6 +68,12 @@ export async function fetchApi<T = any>(
       throw new Error(errorMsg);
     }
 
+    // Handle 204 No Content (successful DELETE with no response body)
+    if (response.status === 204) {
+      console.log('✅ Success (204 No Content)');
+      return null as T;
+    }
+
     const data = await response.json();
     console.log('📦 Response data:', data);
     return data;
@@ -431,6 +437,41 @@ export async function fetchEventAssignments(eventId: string) {
   return await fetchApi(`/api/management/events/${eventId}/assignments`);
 }
 
+// ==================== EVENTS API ====================
+
+/**
+ * Fetch events from the API
+ * @param params - Query parameters for filtering events
+ */
+export async function fetchEvents(params?: {
+  page?: number;
+  per_page?: number;
+  status?: string;
+  from_date?: string;
+  to_date?: string;
+  search?: string;
+}) {
+  let endpoint = '/api/management/events';
+  
+  if (params) {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+    if (params.status) queryParams.append('status', params.status);
+    if (params.from_date) queryParams.append('from_date', params.from_date);
+    if (params.to_date) queryParams.append('to_date', params.to_date);
+    if (params.search) queryParams.append('search', params.search);
+    
+    const queryString = queryParams.toString();
+    if (queryString) {
+      endpoint += `?${queryString}`;
+    }
+  }
+  
+  const response = await fetchApi(endpoint);
+  return response;
+}
+
 // ==================== REPORTS API ====================
 
 /**
@@ -482,5 +523,75 @@ export async function fetchUpcomingCrewReport(daysAhead?: number) {
  */
 export async function fetchDashboardReport() {
   return await fetchApi('/api/management/reports/dashboard');
+}
+
+// ==================== ADMIN CONTACTS API ====================
+
+/**
+ * Fetch admin WhatsApp contacts from the API
+ * @param params - Query parameters for filtering contacts
+ */
+export async function fetchAdminContacts(params?: {
+  role?: string;
+  is_active?: boolean;
+  is_primary?: boolean;
+}) {
+  let endpoint = '/api/management/admin_contacts';
+  
+  if (params) {
+    const queryParams = new URLSearchParams();
+    if (params.role) queryParams.append('role', params.role);
+    if (params.is_active !== undefined) queryParams.append('is_active', params.is_active.toString());
+    if (params.is_primary !== undefined) queryParams.append('is_primary', params.is_primary.toString());
+    
+    const queryString = queryParams.toString();
+    if (queryString) {
+      endpoint += `?${queryString}`;
+    }
+  }
+  
+  const response = await fetchApi(endpoint);
+  return response;
+}
+
+/**
+ * Fetch a single admin contact by ID
+ * @param id - Contact ID
+ */
+export async function fetchAdminContactById(id: number) {
+  return await fetchApi(`/api/management/admin_contacts/${id}`);
+}
+
+/**
+ * Create a new admin WhatsApp contact
+ * @param contactData - Contact data to create
+ */
+export async function createAdminContact(contactData: any) {
+  return await fetchApi('/api/management/admin_contacts', {
+    method: 'POST',
+    body: JSON.stringify(contactData),
+  });
+}
+
+/**
+ * Update an existing admin contact
+ * @param id - Contact ID
+ * @param updateData - Data to update
+ */
+export async function updateAdminContact(id: number, updateData: any) {
+  return await fetchApi(`/api/management/admin_contacts/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updateData),
+  });
+}
+
+/**
+ * Delete an admin contact
+ * @param id - Contact ID
+ */
+export async function deleteAdminContact(id: number) {
+  return await fetchApi(`/api/management/admin_contacts/${id}`, {
+    method: 'DELETE',
+  });
 }
 

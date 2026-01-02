@@ -76,6 +76,7 @@ export default function AssignmentsPage() {
   const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [selectedAssignments, setSelectedAssignments] = useState<string[]>([]);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{ isOpen: boolean; assignmentId: string | null; name: string }>({ isOpen: false, assignmentId: null, name: '' });
   
   // Filters
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>('');
@@ -187,23 +188,30 @@ export default function AssignmentsPage() {
     }
   };
 
-  const handleDeleteAssignment = async (id: string) => {
+  const handleDeleteAssignment = (id: string) => {
     const assignment = assignments.find(a => a.assignment_id === id);
     const eventDisplay = assignment?.artist_name || assignment?.event_code || 'event';
     const name = assignment ? `${assignment.technician_name} for ${eventDisplay}` : 'this assignment';
     
-    if (!confirm(`Are you sure you want to delete ${name}?`)) {
-      return;
-    }
+    setDeleteConfirmation({ isOpen: true, assignmentId: id, name });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirmation.assignmentId) return;
     
     try {
-      await deleteAssignment(id);
+      await deleteAssignment(deleteConfirmation.assignmentId);
       toast.success('Assignment deleted successfully');
+      setDeleteConfirmation({ isOpen: false, assignmentId: null, name: '' });
       loadAssignments();
     } catch (error: any) {
       console.error('❌ Error deleting assignment:', error);
       toast.error('Failed to delete assignment: ' + error.message);
     }
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirmation({ isOpen: false, assignmentId: null, name: '' });
   };
 
   const handleBulkSendInvitations = async () => {
@@ -672,6 +680,58 @@ export default function AssignmentsPage() {
         initialData={modalMode === 'edit' ? editingAssignment : undefined}
         mode={modalMode}
       />
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmation.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md transform transition-all">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-red-500 to-red-600 px-6 py-5 rounded-t-2xl">
+              <div className="flex items-center gap-3">
+                <div className="flex-shrink-0 w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                  <AlertCircle className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white">Confirm Deletion</h3>
+                  <p className="text-red-100 text-sm mt-0.5">This action cannot be undone</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="px-6 py-6">
+              <p className="text-gray-700 text-base leading-relaxed">
+                Are you sure you want to delete the assignment for <span className="font-semibold text-gray-900">{deleteConfirmation.name}</span>?
+              </p>
+              <div className="mt-4 bg-red-50 border border-red-100 rounded-lg p-4">
+                <div className="flex gap-2">
+                  <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-red-800">
+                    This will permanently remove this assignment from the system. All associated data will be lost.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 bg-gray-50 rounded-b-2xl flex items-center justify-end gap-3">
+              <button
+                onClick={cancelDelete}
+                className="px-5 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium shadow-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium shadow-lg hover:shadow-xl flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete Assignment
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

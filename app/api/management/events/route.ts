@@ -6,12 +6,27 @@ const EXTERNAL_API_BASE = process.env.BACKEND_API_URL || 'https://smartops-dev-c
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const queryString = searchParams.toString();
     
-    let externalUrl = `${EXTERNAL_API_BASE}/api/management/assignments`;
-    if (queryString) externalUrl += `?${queryString}`;
+    // Build query parameters
+    const queryParams = new URLSearchParams();
+    const page = searchParams.get('page');
+    const per_page = searchParams.get('per_page');
+    const status = searchParams.get('status');
+    const from_date = searchParams.get('from_date');
+    const to_date = searchParams.get('to_date');
+    const search = searchParams.get('search');
     
-    console.log('🔄 Server-side proxying to external API:', externalUrl);
+    if (page) queryParams.append('page', page);
+    if (per_page) queryParams.append('per_page', per_page);
+    if (status) queryParams.append('status', status);
+    if (from_date) queryParams.append('from_date', from_date);
+    if (to_date) queryParams.append('to_date', to_date);
+    if (search) queryParams.append('search', search);
+    
+    const queryString = queryParams.toString();
+    const externalUrl = `${EXTERNAL_API_BASE}/api/management/events${queryString ? `?${queryString}` : ''}`;
+    
+    console.log('🔄 Fetching events from:', externalUrl);
     
     const response = await fetch(externalUrl, {
       headers: {
@@ -20,15 +35,27 @@ export async function GET(request: NextRequest) {
       cache: 'no-store',
     });
 
+    console.log('📡 External API response status:', response.status, response.statusText);
+
     if (!response.ok) {
-      console.error('❌ External API returned error:', response.status, response.statusText);
       const errorText = await response.text();
-      console.error('❌ Error details:', errorText);
-      throw new Error(`External API error: ${response.status}`);
+      console.error('❌ External API error response:', errorText);
+      
+      let errorData;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch {
+        errorData = { error: errorText };
+      }
+      
+      return NextResponse.json(
+        errorData,
+        { status: response.status }
+      );
     }
 
     const data = await response.json();
-    console.log('✅ Successfully fetched assignments from external API');
+    console.log('✅ Successfully fetched events');
     
     return NextResponse.json(data, {
       headers: {
@@ -36,13 +63,9 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.error('❌ Error proxying assignments request:', error.message);
+    console.error('❌ Error fetching events:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to fetch assignments from external API',
-        details: error.message 
-      },
+      { success: false, error: 'Failed to fetch events', details: error.message },
       { status: 500 }
     );
   }
@@ -51,9 +74,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const externalUrl = `${EXTERNAL_API_BASE}/api/management/assignments`;
+    const externalUrl = `${EXTERNAL_API_BASE}/api/management/events`;
     
-    console.log('🔄 Creating assignment');
+    console.log('🔄 Creating event');
     console.log('📦 Create data:', JSON.stringify(body, null, 2));
     console.log('🔗 POST URL:', externalUrl);
     
@@ -71,7 +94,6 @@ export async function POST(request: NextRequest) {
       const errorText = await response.text();
       console.error('❌ External API error response:', errorText);
       
-      // Try to parse error as JSON, otherwise use text
       let errorData;
       try {
         errorData = JSON.parse(errorText);
@@ -86,12 +108,12 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json();
-    console.log('✅ Successfully created assignment');
+    console.log('✅ Successfully created event');
     return NextResponse.json(data);
   } catch (error: any) {
-    console.error('❌ Error creating assignment:', error);
+    console.error('❌ Error creating event:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to create assignment', details: error.message },
+      { success: false, error: 'Failed to create event', details: error.message },
       { status: 500 }
     );
   }

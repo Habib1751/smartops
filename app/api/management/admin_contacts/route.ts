@@ -1,17 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Use server-side env variable (no NEXT_PUBLIC prefix) to hide from browser
 const EXTERNAL_API_BASE = process.env.BACKEND_API_URL || 'https://smartops-dev-cjc6cadne5gwfja3.israelcentral-01.azurewebsites.net';
 
+/**
+ * GET /api/management/admin_contacts
+ * List all admin WhatsApp contacts with optional filtering
+ */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const queryString = searchParams.toString();
     
-    let externalUrl = `${EXTERNAL_API_BASE}/api/management/assignments`;
-    if (queryString) externalUrl += `?${queryString}`;
+    // Build query parameters
+    const queryParams = new URLSearchParams();
+    const role = searchParams.get('role');
+    const is_active = searchParams.get('is_active');
+    const is_primary = searchParams.get('is_primary');
     
-    console.log('🔄 Server-side proxying to external API:', externalUrl);
+    if (role) queryParams.append('role', role);
+    if (is_active) queryParams.append('is_active', is_active);
+    if (is_primary) queryParams.append('is_primary', is_primary);
+    
+    const queryString = queryParams.toString();
+    const externalUrl = `${EXTERNAL_API_BASE}/api/management/admin_contacts${queryString ? `?${queryString}` : ''}`;
+    
+    console.log('🔄 Fetching admin contacts from:', externalUrl);
     
     const response = await fetch(externalUrl, {
       headers: {
@@ -20,15 +32,27 @@ export async function GET(request: NextRequest) {
       cache: 'no-store',
     });
 
+    console.log('📡 External API response status:', response.status, response.statusText);
+
     if (!response.ok) {
-      console.error('❌ External API returned error:', response.status, response.statusText);
       const errorText = await response.text();
-      console.error('❌ Error details:', errorText);
-      throw new Error(`External API error: ${response.status}`);
+      console.error('❌ External API error response:', errorText);
+      
+      let errorData;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch {
+        errorData = { error: errorText };
+      }
+      
+      return NextResponse.json(
+        errorData,
+        { status: response.status }
+      );
     }
 
     const data = await response.json();
-    console.log('✅ Successfully fetched assignments from external API');
+    console.log('✅ Successfully fetched admin contacts');
     
     return NextResponse.json(data, {
       headers: {
@@ -36,24 +60,24 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.error('❌ Error proxying assignments request:', error.message);
+    console.error('❌ Error fetching admin contacts:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to fetch assignments from external API',
-        details: error.message 
-      },
+      { success: false, error: 'Failed to fetch admin contacts', details: error.message },
       { status: 500 }
     );
   }
 }
 
+/**
+ * POST /api/management/admin_contacts
+ * Create a new admin WhatsApp contact
+ */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const externalUrl = `${EXTERNAL_API_BASE}/api/management/assignments`;
+    const externalUrl = `${EXTERNAL_API_BASE}/api/management/admin_contacts`;
     
-    console.log('🔄 Creating assignment');
+    console.log('🔄 Creating admin contact');
     console.log('📦 Create data:', JSON.stringify(body, null, 2));
     console.log('🔗 POST URL:', externalUrl);
     
@@ -71,7 +95,6 @@ export async function POST(request: NextRequest) {
       const errorText = await response.text();
       console.error('❌ External API error response:', errorText);
       
-      // Try to parse error as JSON, otherwise use text
       let errorData;
       try {
         errorData = JSON.parse(errorText);
@@ -86,12 +109,12 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json();
-    console.log('✅ Successfully created assignment');
+    console.log('✅ Successfully created admin contact');
     return NextResponse.json(data);
   } catch (error: any) {
-    console.error('❌ Error creating assignment:', error);
+    console.error('❌ Error creating admin contact:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to create assignment', details: error.message },
+      { success: false, error: 'Failed to create admin contact', details: error.message },
       { status: 500 }
     );
   }
