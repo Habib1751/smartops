@@ -7,21 +7,31 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     
-    // Build query parameters
+    // Build query parameters according to Events Management API documentation
     const queryParams = new URLSearchParams();
     const page = searchParams.get('page');
     const per_page = searchParams.get('per_page');
-    const status = searchParams.get('status');
+    const event_status = searchParams.get('event_status');
+    const event_type = searchParams.get('event_type');
     const from_date = searchParams.get('from_date');
     const to_date = searchParams.get('to_date');
+    const client_id = searchParams.get('client_id');
+    const lead_id = searchParams.get('lead_id');
     const search = searchParams.get('search');
+    const sort_by = searchParams.get('sort_by');
+    const sort_order = searchParams.get('sort_order');
     
     if (page) queryParams.append('page', page);
     if (per_page) queryParams.append('per_page', per_page);
-    if (status) queryParams.append('status', status);
+    if (event_status) queryParams.append('event_status', event_status);
+    if (event_type) queryParams.append('event_type', event_type);
     if (from_date) queryParams.append('from_date', from_date);
     if (to_date) queryParams.append('to_date', to_date);
+    if (client_id) queryParams.append('client_id', client_id);
+    if (lead_id) queryParams.append('lead_id', lead_id);
     if (search) queryParams.append('search', search);
+    if (sort_by) queryParams.append('sort_by', sort_by);
+    if (sort_order) queryParams.append('sort_order', sort_order);
     
     const queryString = queryParams.toString();
     const externalUrl = `${EXTERNAL_API_BASE}/api/management/events${queryString ? `?${queryString}` : ''}`;
