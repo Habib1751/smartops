@@ -3,11 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 // External API base URL
 const EXTERNAL_API_BASE = process.env.BACKEND_API_URL || 'https://smartops-dev-cjc6cadne5gwfja3.israelcentral-01.azurewebsites.net';
 
-/**
- * GET /api/inventory
- * Fetches inventory from external API with pagination and search
- * Query params: limit, offset, q (search query)
- */
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
