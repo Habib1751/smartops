@@ -77,8 +77,14 @@ export function Sidebar({ unreadCount = 5, mobileOpen = false, onClose }: Sideba
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={onClose} />
           <div className="relative w-64 h-full bg-white border-r border-gray-200">
-            <div className="h-16 flex items-center px-4 border-b">
-              <h1 className="text-lg font-bold">SmartOps</h1>
+            <div className="h-28 flex items-center px-3 border-b">
+              <Link href="/dashboard" className="flex items-center justify-center w-full">
+                <img
+                  src="/smart-logo.png"
+                  alt="SmartOps"
+                  className="w-full max-w-[220px] md:max-w-[260px] lg:max-w-[300px] h-auto object-contain mx-2"
+                />
+              </Link>
               <button onClick={onClose} className="ml-auto p-2 text-gray-600">
                 <X />
               </button>
@@ -108,8 +114,14 @@ export function Sidebar({ unreadCount = 5, mobileOpen = false, onClose }: Sideba
 
       {/* Desktop sidebar */}
       <div className="hidden md:flex md:w-64 bg-white border-r border-gray-200 flex-col h-screen md:fixed md:left-0 md:top-0">
-        <div className="h-16 flex items-center px-6 border-b border-gray-200">
-          <h1 className="text-xl font-bold text-gray-900">SmartOps</h1>
+        <div className="h-28 flex items-center px-6 border-b border-gray-200">
+          <Link href="/dashboard" className="flex items-center justify-center w-full">
+            <img
+              src="/smart-logo.png"
+              alt="SmartOps"
+              className="w-full max-w-[260px] lg:max-w-[320px] h-auto object-contain mx-3"
+            />
+          </Link>
         </div>
 
         <div className="px-4 py-3 border-b border-gray-200">

@@ -164,27 +164,48 @@ export default function EventsPage() {
       </div>
 
       {/* Stats Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-sm text-gray-600">Total Events</div>
-          <div className="text-2xl font-bold text-black mt-1">{totalEvents}</div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-sm text-gray-600">Confirmed</div>
-          <div className="text-2xl font-bold text-green-600 mt-1">
-            {events.filter(e => e.event_status === 'confirmed').length}
+          <div className="text-sm text-black">Total Events</div>
+          <div className="mt-1">
+            <div className="max-w-full overflow-hidden">
+              <div className="text-2xl md:text-3xl lg:text-4xl font-bold text-black leading-tight break-words">
+                {totalEvents}
+              </div>
+            </div>
           </div>
         </div>
+
         <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-sm text-gray-600">Pending</div>
-          <div className="text-2xl font-bold text-yellow-600 mt-1">
-            {events.filter(e => e.event_status === 'pending').length}
+          <div className="text-sm text-black">Confirmed</div>
+          <div className="mt-1">
+            <div className="max-w-full overflow-hidden">
+              <div className="text-2xl md:text-3xl lg:text-4xl font-bold text-black leading-tight">
+                {events.filter(e => e.event_status === 'confirmed').length}
+              </div>
+            </div>
           </div>
         </div>
+
         <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-sm text-gray-600">Total Revenue</div>
-          <div className="text-2xl font-bold text-blue-600 mt-1">
-            {formatCurrency(events.reduce((sum, e) => sum + (parseFloat(e.total_price) || 0), 0))}
+          <div className="text-sm text-black">Pending</div>
+          <div className="mt-1">
+            <div className="max-w-full overflow-hidden">
+              <div className="text-2xl md:text-3xl lg:text-4xl font-bold text-black leading-tight">
+                {events.filter(e => e.event_status === 'pending').length}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-4">
+          <div className="text-sm text-black">Total Revenue</div>
+          <div className="mt-1">
+            <div className="max-w-full overflow-hidden">
+              <div className="text-2xl md:text-3xl lg:text-4xl font-bold text-black leading-tight break-words">
+                {formatCurrency(events.reduce((sum, e) => sum + (parseFloat(e.total_price) || 0), 0))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
